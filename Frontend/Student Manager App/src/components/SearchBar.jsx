@@ -1,3 +1,4 @@
+import { useState } from 'react';
 import {
   Box,
   Card,
@@ -6,9 +7,13 @@ import {
   Checkbox,
   Typography,
   Chip,
-  InputAdornment
+  InputAdornment,
+  IconButton,
+  Tooltip,
+  Badge
 } from '@mui/material';
-import { Search } from '@mui/icons-material';
+import { Search, FilterList } from '@mui/icons-material';
+import FilterPopup from './FilterPopup';
 
 const SearchBar = ({ 
   searchQuery, 
@@ -16,8 +21,26 @@ const SearchBar = ({
   onSearch, 
   selectAll, 
   onSelectAllChange, 
-  selectedCount 
+  selectedCount,
+  onFilterChange,
+  currentFilter 
 }) => {
+  const [filterAnchorEl, setFilterAnchorEl] = useState(null);
+
+  const handleFilterClick = (event) => {
+    setFilterAnchorEl(event.currentTarget);
+  };
+
+  const handleFilterClose = () => {
+    setFilterAnchorEl(null);
+  };
+
+  const handleApplyFilter = (status) => {
+    onFilterChange(status);
+  };
+
+  const isFilterOpen = Boolean(filterAnchorEl);
+  const isFilterActive = currentFilter !== 'active'; // Show badge if not default filter
   return (
     <Card sx={{ p: 2, mb: 3 }}>
       <Box sx={{ display: 'flex', gap: 2, alignItems: 'center', mb: 2 }}>
@@ -48,6 +71,41 @@ const SearchBar = ({
         >
           Search
         </Button>
+        
+        {/* Filter Button */}
+        <Tooltip title="Filter Students">
+          <IconButton
+            onClick={handleFilterClick}
+            sx={{
+              height: 56,
+              width: 56,
+              border: '1px solid',
+              borderColor: isFilterActive ? '#7c3aed' : 'rgba(0, 0, 0, 0.23)',
+              backgroundColor: isFilterActive ? 'rgba(124, 58, 237, 0.08)' : 'transparent',
+              '&:hover': {
+                backgroundColor: 'rgba(124, 58, 237, 0.12)',
+                borderColor: '#7c3aed'
+              }
+            }}
+          >
+            <Badge 
+              variant="dot" 
+              color="secondary"
+              invisible={!isFilterActive}
+            >
+              <FilterList sx={{ color: isFilterActive ? '#7c3aed' : 'inherit' }} />
+            </Badge>
+          </IconButton>
+        </Tooltip>
+
+        {/* Filter Popup */}
+        <FilterPopup
+          anchorEl={filterAnchorEl}
+          open={isFilterOpen}
+          onClose={handleFilterClose}
+          onApplyFilter={handleApplyFilter}
+          currentFilter={currentFilter}
+        />
       </Box>
 
       {/* Select All Checkbox */}

@@ -3,10 +3,23 @@ const Student = require('../models/studentModel');
 // Business logic for student operations
 const studentController = {
 
-  // Get all students
+  // Get all students (with optional filters)
   getAllStudents: async (req, res) => {
     try {
-      const students = await Student.findAll();
+      const { status } = req.query; // Get status filter from query params
+      
+      let students;
+      if (status === 'active') {
+        students = await Student.findAll();
+      } else if (status === 'inactive') {
+        students = await Student.findInactive();
+      } else if (status === 'all') {
+        students = await Student.findAllIncludingInactive();
+      } else {
+        // Default: return only active students
+        students = await Student.findAll();
+      }
+      
       res.json({ students });
     } catch (error) {
       console.error('Error fetching students:', error);

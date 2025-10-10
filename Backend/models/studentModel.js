@@ -11,6 +11,22 @@ const Student = {
     return rows;
   },
 
+  // Get all inactive students
+  findInactive: async () => {
+    const [rows] = await db.query(
+      'SELECT * FROM students WHERE is_active = false ORDER BY created_at DESC'
+    );
+    return rows;
+  },
+
+  // Get all students (active and inactive)
+  findAllIncludingInactive: async () => {
+    const [rows] = await db.query(
+      'SELECT * FROM students ORDER BY created_at DESC'
+    );
+    return rows;
+  },
+
   // Get single student by ID
   findById: async (id) => {
     const [rows] = await db.query(

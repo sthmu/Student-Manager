@@ -24,7 +24,7 @@ import {
 const drawerWidth = 280;
 const collapsedWidth = 70;
 
-const Sidebar = ({ isOpen, onToggle, onAddStudent, onLogout }) => {
+const Sidebar = ({ isOpen, onToggle, onAddStudent, onSettings, onLogout }) => {
   return (
     <Drawer
       sx={{
@@ -130,6 +130,7 @@ const Sidebar = ({ isOpen, onToggle, onAddStudent, onLogout }) => {
         <ListItem disablePadding>
           <Tooltip title={!isOpen ? "Settings" : ""} placement="right">
             <ListItemButton
+              onClick={onSettings}
               sx={{
                 '&:hover': { bgcolor: 'rgba(255,255,255,0.1)' },
                 justifyContent: isOpen ? 'flex-start' : 'center',

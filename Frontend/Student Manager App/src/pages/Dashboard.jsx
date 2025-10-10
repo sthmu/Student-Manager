@@ -1,85 +1,72 @@
-import { useState } from 'react';
-import { Box, Typography, Button } from '@mui/material';
+import { useState, useEffect } from 'react';
+import { Box, Typography, Button, CircularProgress, Alert } from '@mui/material';
 import Sidebar from '../components/Sidebar';
 import TopBar from '../components/TopBar';
 import SearchBar from '../components/SearchBar';
 import StudentTable from '../components/StudentTable';
-
-// Sample student data - Replace with actual data from backend
-const initialStudents = [
-  {
-    id: 1,
-    name: 'John Doe',
-    avatar: 'https://i.pravatar.cc/150?img=1',
-    address: '123 Main St, New York',
-    contact: '+1 234-567-8901',
-    course: 'Computer Science'
-  },
-  {
-    id: 2,
-    name: 'Jane Smith',
-    avatar: 'https://i.pravatar.cc/150?img=2',
-    address: '456 Oak Ave, Boston',
-    contact: '+1 234-567-8902',
-    course: 'Business Administration'
-  },
-  {
-    id: 3,
-    name: 'Michael Johnson',
-    avatar: 'https://i.pravatar.cc/150?img=3',
-    address: '789 Pine Rd, Chicago',
-    contact: '+1 234-567-8903',
-    course: 'Engineering'
-  },
-  {
-    id: 4,
-    name: 'Emily Davis',
-    avatar: 'https://i.pravatar.cc/150?img=4',
-    address: '321 Elm St, Seattle',
-    contact: '+1 234-567-8904',
-    course: 'Psychology'
-  },
-  {
-    id: 5,
-    name: 'David Wilson',
-    avatar: 'https://i.pravatar.cc/150?img=5',
-    address: '654 Maple Dr, Denver',
-    contact: '+1 234-567-8905',
-    course: 'Mathematics'
-  }
-];
+import AddStudentModal from '../components/AddStudentModal';
+import ViewStudentModal from '../components/ViewStudentModal'; // ← Import ViewStudentModal
 
 const Dashboard = () => {
-  const [students, setStudents] = useState(initialStudents);
+  const [students, setStudents] = useState([]);
+  const [allStudents, setAllStudents] = useState([]);
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedStudents, setSelectedStudents] = useState([]);
   const [selectAll, setSelectAll] = useState(false);
   const [sidebarOpen, setSidebarOpen] = useState(true);
+  const [addModalOpen, setAddModalOpen] = useState(false);
+  const [viewModalOpen, setViewModalOpen] = useState(false); // ← Add view modal state
+  const [selectedStudent, setSelectedStudent] = useState(null); // ← Selected student for viewing
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState('');
 
-  // Get user data from localStorage (saved during login)
   const user = JSON.parse(localStorage.getItem('user') || '{}');
 
-  // Toggle sidebar
+  // Fetch students from backend
+  const fetchStudents = async () => {
+    setLoading(true);
+    setError('');
+    try {
+      const response = await fetch('http://localhost:5000/api/students');
+      const data = await response.json();
+      
+      if (response.ok) {
+        setStudents(data.students);
+        setAllStudents(data.students);
+      } else {
+        setError('Failed to load students');
+      }
+    } catch (error) {
+      console.error('Error fetching students:', error);
+      setError('Cannot connect to server. Please check if backend is running.');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  // Load students on component mount
+  useEffect(() => {
+    fetchStudents();
+  }, []);
+
   const handleToggleSidebar = () => {
     setSidebarOpen(!sidebarOpen);
   };
 
-  // Handle search
   const handleSearch = () => {
     if (!searchQuery.trim()) {
-      setStudents(initialStudents);
+      setStudents(allStudents);
       return;
     }
     
-    const filtered = initialStudents.filter(student =>
+    const filtered = allStudents.filter(student =>
       student.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      student.course.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      student.address.toLowerCase().includes(searchQuery.toLowerCase())
+      (student.course && student.course.toLowerCase().includes(searchQuery.toLowerCase())) ||
+      (student.email && student.email.toLowerCase().includes(searchQuery.toLowerCase()))
     );
     setStudents(filtered);
   };
 
-  // Handle select all
   const handleSelectAll = (event) => {
     setSelectAll(event.target.checked);
     if (event.target.checked) {
@@ -89,7 +76,6 @@ const Dashboard = () => {
     }
   };
 
-  // Handle individual selection
   const handleSelectStudent = (studentId) => {
     setSelectedStudents(prev => {
       if (prev.includes(studentId)) {
@@ -100,27 +86,44 @@ const Dashboard = () => {
     });
   };
 
-  // Handle actions
+  // ← Updated handleView to open modal
   const handleView = (student) => {
-    alert(`Viewing details for ${student.name}`);
-    // TODO: Open student details modal/page
+    setSelectedStudent(student);
+    setViewModalOpen(true);
   };
 
   const handleEdit = (student) => {
-    alert(`Editing ${student.name}`);
-    // TODO: Open edit student modal/page
+    alert(`Edit functionality coming soon for ${student.name}`);
+    // TODO: Open edit modal
   };
 
-  const handleDelete = (student) => {
+  const handleDelete = async (student) => {
     if (window.confirm(`Are you sure you want to delete ${student.name}?`)) {
-      setStudents(students.filter(s => s.id !== student.id));
-      alert(`${student.name} has been deleted`);
+      try {
+        const response = await fetch(`http://localhost:5000/api/students/${student.id}`, {
+          method: 'DELETE'
+        });
+        
+        if (response.ok) {
+          alert(`${student.name} has been deleted`);
+          fetchStudents(); // Refresh list
+        } else {
+          alert('Failed to delete student');
+        }
+      } catch (error) {
+        console.error('Error deleting student:', error);
+        alert('Error deleting student');
+      }
     }
   };
 
   const handleAddStudent = () => {
-    alert('Opening Add New Student form...');
-    // TODO: Navigate to add student page or open modal
+    setAddModalOpen(true);
+  };
+
+  const handleStudentAdded = (newStudent) => {
+    console.log('New student added:', newStudent);
+    fetchStudents(); // Refresh the student list
   };
 
   const handleLogout = () => {
@@ -131,17 +134,34 @@ const Dashboard = () => {
     }
   };
 
-  const handleDeleteSelected = () => {
+  const handleDeleteSelected = async () => {
     if (window.confirm(`Delete ${selectedStudents.length} selected students?`)) {
-      setStudents(students.filter(s => !selectedStudents.includes(s.id)));
-      setSelectedStudents([]);
-      setSelectAll(false);
+      try {
+        const response = await fetch('http://localhost:5000/api/students/delete-multiple', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json'
+          },
+          body: JSON.stringify({ ids: selectedStudents })
+        });
+        
+        if (response.ok) {
+          alert(`${selectedStudents.length} students deleted`);
+          setSelectedStudents([]);
+          setSelectAll(false);
+          fetchStudents();
+        } else {
+          alert('Failed to delete students');
+        }
+      } catch (error) {
+        console.error('Error deleting students:', error);
+        alert('Error deleting students');
+      }
     }
   };
 
   return (
     <Box sx={{ display: 'flex' }}>
-      {/* Sidebar Component */}
       <Sidebar 
         isOpen={sidebarOpen}
         onToggle={handleToggleSidebar}
@@ -149,22 +169,23 @@ const Dashboard = () => {
         onLogout={handleLogout}
       />
 
-      {/* Main Content */}
       <Box component="main" sx={{ flexGrow: 1, bgcolor: '#f5f5f5', minHeight: '100vh' }}>
-        {/* Top Bar Component */}
         <TopBar 
           user={user}
           onLogout={handleLogout}
         />
 
-        {/* Dashboard Content */}
         <Box sx={{ p: 4 }}>
-          {/* Page Title */}
           <Typography variant="h4" fontWeight="bold" sx={{ mb: 3 }}>
             Student Records
           </Typography>
 
-          {/* Search Bar Component */}
+          {error && (
+            <Alert severity="error" sx={{ mb: 2 }}>
+              {error}
+            </Alert>
+          )}
+
           <SearchBar
             searchQuery={searchQuery}
             onSearchChange={(e) => setSearchQuery(e.target.value)}
@@ -174,35 +195,58 @@ const Dashboard = () => {
             selectedCount={selectedStudents.length}
           />
 
-          {/* Student Table Component */}
-          <StudentTable
-            students={students}
-            selectedStudents={selectedStudents}
-            selectAll={selectAll}
-            onSelectAll={handleSelectAll}
-            onSelectStudent={handleSelectStudent}
-            onView={handleView}
-            onEdit={handleEdit}
-            onDelete={handleDelete}
-          />
+          {loading ? (
+            <Box sx={{ display: 'flex', justifyContent: 'center', py: 8 }}>
+              <CircularProgress />
+            </Box>
+          ) : (
+            <>
+              <StudentTable
+                students={students}
+                selectedStudents={selectedStudents}
+                selectAll={selectAll}
+                onSelectAll={handleSelectAll}
+                onSelectStudent={handleSelectStudent}
+                onView={handleView}
+                onEdit={handleEdit}
+                onDelete={handleDelete}
+              />
 
-          {/* Summary Footer */}
-          <Box sx={{ mt: 2, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-            <Typography variant="body2" color="text.secondary">
-              Showing {students.length} of {initialStudents.length} students
-            </Typography>
-            {selectedStudents.length > 0 && (
-              <Button 
-                variant="outlined" 
-                color="error"
-                onClick={handleDeleteSelected}
-              >
-                Delete Selected ({selectedStudents.length})
-              </Button>
-            )}
-          </Box>
+              <Box sx={{ mt: 2, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                <Typography variant="body2" color="text.secondary">
+                  Showing {students.length} of {allStudents.length} students
+                </Typography>
+                {selectedStudents.length > 0 && (
+                  <Button 
+                    variant="outlined" 
+                    color="error"
+                    onClick={handleDeleteSelected}
+                  >
+                    Delete Selected ({selectedStudents.length})
+                  </Button>
+                )}
+              </Box>
+            </>
+          )}
         </Box>
       </Box>
+
+      {/* Add Student Modal */}
+      <AddStudentModal
+        open={addModalOpen}
+        onClose={() => setAddModalOpen(false)}
+        onStudentAdded={handleStudentAdded}
+      />
+
+      {/* ← View Student Modal */}
+      <ViewStudentModal
+        open={viewModalOpen}
+        onClose={() => {
+          setViewModalOpen(false);
+          setSelectedStudent(null);
+        }}
+        student={selectedStudent}
+      />
     </Box>        
   );
 };

@@ -44,10 +44,10 @@ const Sidebar = ({ isOpen, onToggle, onAddStudent, onLogout }) => {
       anchor="left"
     >
       {/* System Title with Toggle Button */}
-      <Box sx={{ 
-        p: isOpen ? 3 : 1, 
-        display: 'flex', 
-        alignItems: 'center', 
+      <Box sx={{
+        p: isOpen ? 3 : 1,
+        display: 'flex',
+        alignItems: 'flex-start',
         gap: 2,
         justifyContent: isOpen ? 'flex-start' : 'center',
         minHeight: 80
@@ -58,19 +58,19 @@ const Sidebar = ({ isOpen, onToggle, onAddStudent, onLogout }) => {
             <Typography variant="h6" fontWeight="bold" sx={{ flexGrow: 1 }}>
               Student Management System
             </Typography>
-            <Box >
+            <Box>
               <IconButton
                 onClick={onToggle}
                 sx={{ color: 'white' }}
-                size="small"
+                size="small" 
               >
                 <ChevronLeft />
               </IconButton>
             </Box>
           </>
         ) : (
-          <IconButton 
-            onClick={onToggle} 
+          <IconButton
+            onClick={onToggle}
             sx={{ color: 'white' }}
             size="small"
           >
@@ -78,22 +78,22 @@ const Sidebar = ({ isOpen, onToggle, onAddStudent, onLogout }) => {
           </IconButton>
         )}
       </Box>
-      
+
       <Divider sx={{ borderColor: 'rgba(255,255,255,0.2)' }} />
-      
+
       {/* Navigation Menu */}
       <List sx={{ mt: 2 }}>
         <ListItem disablePadding>
           <Tooltip title={!isOpen ? "Home" : ""} placement="right">
-            <ListItemButton 
-              sx={{ 
+            <ListItemButton
+              sx={{
                 '&:hover': { bgcolor: 'rgba(255,255,255,0.1)' },
                 bgcolor: 'rgba(255,255,255,0.15)',
                 justifyContent: isOpen ? 'flex-start' : 'center',
                 px: isOpen ? 2 : 1
               }}
             >
-              <ListItemIcon sx={{ 
+              <ListItemIcon sx={{
                 color: 'white',
                 minWidth: isOpen ? 40 : 'auto',
                 justifyContent: 'center'
@@ -107,15 +107,15 @@ const Sidebar = ({ isOpen, onToggle, onAddStudent, onLogout }) => {
 
         <ListItem disablePadding>
           <Tooltip title={!isOpen ? "Add New Student" : ""} placement="right">
-            <ListItemButton 
+            <ListItemButton
               onClick={onAddStudent}
-              sx={{ 
+              sx={{
                 '&:hover': { bgcolor: 'rgba(255,255,255,0.1)' },
                 justifyContent: isOpen ? 'flex-start' : 'center',
                 px: isOpen ? 2 : 1
               }}
             >
-              <ListItemIcon sx={{ 
+              <ListItemIcon sx={{
                 color: 'white',
                 minWidth: isOpen ? 40 : 'auto',
                 justifyContent: 'center'
@@ -129,14 +129,14 @@ const Sidebar = ({ isOpen, onToggle, onAddStudent, onLogout }) => {
 
         <ListItem disablePadding>
           <Tooltip title={!isOpen ? "Settings" : ""} placement="right">
-            <ListItemButton 
-              sx={{ 
+            <ListItemButton
+              sx={{
                 '&:hover': { bgcolor: 'rgba(255,255,255,0.1)' },
                 justifyContent: isOpen ? 'flex-start' : 'center',
                 px: isOpen ? 2 : 1
               }}
             >
-              <ListItemIcon sx={{ 
+              <ListItemIcon sx={{
                 color: 'white',
                 minWidth: isOpen ? 40 : 'auto',
                 justifyContent: 'center'
@@ -150,15 +150,15 @@ const Sidebar = ({ isOpen, onToggle, onAddStudent, onLogout }) => {
 
         <ListItem disablePadding>
           <Tooltip title={!isOpen ? "Logout" : ""} placement="right">
-            <ListItemButton 
+            <ListItemButton
               onClick={onLogout}
-              sx={{ 
+              sx={{
                 '&:hover': { bgcolor: 'rgba(255,255,255,0.1)' },
                 justifyContent: isOpen ? 'flex-start' : 'center',
                 px: isOpen ? 2 : 1
               }}
             >
-              <ListItemIcon sx={{ 
+              <ListItemIcon sx={{
                 color: 'white',
                 minWidth: isOpen ? 40 : 'auto',
                 justifyContent: 'center'

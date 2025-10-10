@@ -42,8 +42,8 @@ const StudentTable = ({
             </TableCell>
             <TableCell><strong>ID</strong></TableCell>
             <TableCell><strong>Student</strong></TableCell>
-            <TableCell><strong>Address</strong></TableCell>
-            <TableCell><strong>Contact</strong></TableCell>
+            <TableCell><strong>phone</strong></TableCell>
+            <TableCell><strong>email</strong></TableCell>
             <TableCell><strong>Course</strong></TableCell>
             <TableCell align="center"><strong>Actions</strong></TableCell>
           </TableRow>
@@ -80,8 +80,8 @@ const StudentTable = ({
                     <Typography>{student.name}</Typography>
                   </Box>
                 </TableCell>
-                <TableCell>{student.address}</TableCell>
-                <TableCell>{student.contact}</TableCell>
+                <TableCell>{student.phone}</TableCell>
+                <TableCell>{student.email}</TableCell>
                 <TableCell>
                   <Chip 
                     label={student.course} 

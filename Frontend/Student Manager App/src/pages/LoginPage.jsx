@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import {
   Container,
   Box,
@@ -26,6 +27,7 @@ import {
 } from '@mui/icons-material';
 
 const LoginPage = () => {
+  const navigate = useNavigate();
   const [formData, setFormData] = useState({
     email: '',
     password: '',
@@ -51,6 +53,8 @@ const LoginPage = () => {
     }
   };
 
+
+  //validation logics
   const validateForm = () => {
     const newErrors = {};
     
@@ -72,6 +76,12 @@ const LoginPage = () => {
     return Object.keys(newErrors).length === 0;
   };
 
+
+  //when submitted validation is checked then
+  //and tried to connect to backend api using fetch post method
+  //if backend is not running error is shown
+  //otherwise the token frm the data is stored in local storage
+  //and user is navigated to dashboard page
   const handleSubmit = async (e) => {
     e.preventDefault();
     
@@ -83,35 +93,31 @@ const LoginPage = () => {
     setLoginError('');
 
     try {
-      // Simulate API call - replace with your actual authentication logic
-      await new Promise(resolve => setTimeout(resolve, 1500));
-      
-      // For demo purposes - replace with actual authentication
-      console.log('Login attempt:', { 
-        email: formData.email, 
-        rememberMe: formData.rememberMe 
+      // Connect to backend API
+      const response = await fetch('http://localhost:5000/api/auth/login', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ 
+          email: formData.email, 
+          password: formData.password 
+        })
       });
       
-      // Uncomment when you have actual authentication
-      // const response = await fetch('/api/auth/login', {
-      //   method: 'POST',
-      //   headers: { 'Content-Type': 'application/json' },
-      //   body: JSON.stringify({ email: formData.email, password: formData.password })
-      // });
-      // const data = await response.json();
-      // if (response.ok) {
-      //   // Handle successful login
-      //   localStorage.setItem('token', data.token);
-      //   // Redirect to dashboard
-      // } else {
-      //   setLoginError(data.message || 'Login failed');
-      // }
+      const data = await response.json();
       
-      // For demo: show success message
-      alert('Login successful! (Demo mode)');
+      if (response.ok) {
+        // Save user data and token
+        localStorage.setItem('token', data.token || 'demo-token');
+        localStorage.setItem('user', JSON.stringify(data.user || { email: formData.email }));
+        
+        // Redirect to dashboard
+        navigate('/dashboard');
+      } else {
+        setLoginError(data.message || 'Login failed');
+      }
       
     } catch (error) {
-      setLoginError('An error occurred. Please try again.');
+      setLoginError('Cannot connect to server. Make sure backend is running on port 5000.');
       console.error('Login error:', error);
     } finally {
       setIsLoading(false);
@@ -291,7 +297,9 @@ const LoginPage = () => {
                 <Typography variant="body2" color="text.secondary">
                   Don't have an account?{' '}
                   <Link
-                    href="#"
+                    component="button"
+                    type="button"
+                    onClick={() => navigate('/register')}
                     variant="body2"
                     underline="hover"
                     sx={{ fontWeight: 600, cursor: 'pointer' }}

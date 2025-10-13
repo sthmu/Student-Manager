@@ -9,7 +9,9 @@ import {
   Avatar,
   Divider,
   Grid,
-  Chip
+  Chip,
+  useMediaQuery,
+  useTheme
 } from '@mui/material';
 import {
   Email,
@@ -21,6 +23,9 @@ import {
 } from '@mui/icons-material';
 
 const ViewStudentModal = ({ open, onClose, student }) => {
+  const theme = useTheme();
+  const isMobile = useMediaQuery(theme.breakpoints.down('sm'));
+  
   if (!student) return null;
 
   // Format date to readable format
@@ -40,19 +45,21 @@ const ViewStudentModal = ({ open, onClose, student }) => {
       onClose={onClose} 
       maxWidth="md" 
       fullWidth
+      fullScreen={isMobile}
       PaperProps={{
         sx: {
-          borderRadius: 2,
-          boxShadow: '0 8px 32px rgba(0,0,0,0.1)'
+          borderRadius: isMobile ? 0 : 2,
+          boxShadow: '0 8px 32px rgba(0,0,0,0.1)',
+          m: isMobile ? 0 : 2
         }
       }}
     >
       <DialogTitle sx={{ 
         background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
         color: 'white',
-        pb: 3
+        pb: { xs: 2, sm: 3 }
       }}>
-        <Typography variant="h5" fontWeight="bold">
+        <Typography variant={isMobile ? "h6" : "h5"} fontWeight="bold">
           Student Details
         </Typography>
       </DialogTitle>

@@ -11,28 +11,75 @@ import {
   MenuItem,
   Typography,
   Box,
-  Divider
+  Divider,
+  FormGroup,
+  FormControlLabel,
+  Checkbox,
+  Paper,
+  useMediaQuery,
+  useTheme
 } from '@mui/material';
-import { Settings } from '@mui/icons-material';
+import { Settings, ViewColumn } from '@mui/icons-material';
 
-const SettingsModal = ({ open, onClose, currentRecordsPerPage, onSaveSettings }) => {
+// Available columns in the student table
+const AVAILABLE_COLUMNS = [
+  { id: 'id', label: 'ID', mandatory: false },
+  { id: 'name', label: 'Student Name', mandatory: true }, // Always shown
+  { id: 'email', label: 'Email', mandatory: false },
+  { id: 'phone', label: 'Phone', mandatory: false },
+  { id: 'course', label: 'Course', mandatory: false },
+  { id: 'enrolment_date', label: 'Enrolment Date', mandatory: false },
+  { id: 'is_active', label: 'Status', mandatory: false }
+];
+
+const DEFAULT_COLUMNS = ['id', 'name', 'phone', 'email', 'course'];
+
+const SettingsModal = ({ open, onClose, currentRecordsPerPage, currentVisibleColumns, onSaveSettings }) => {
+  const theme = useTheme();
+  const isMobile = useMediaQuery(theme.breakpoints.down('sm'));
+  
   const [recordsPerPage, setRecordsPerPage] = useState(currentRecordsPerPage);
+  const [visibleColumns, setVisibleColumns] = useState(currentVisibleColumns || DEFAULT_COLUMNS);
 
   useEffect(() => {
     setRecordsPerPage(currentRecordsPerPage);
-  }, [currentRecordsPerPage]);
+    setVisibleColumns(currentVisibleColumns || DEFAULT_COLUMNS);
+  }, [currentRecordsPerPage, currentVisibleColumns]);
+
+  const handleColumnToggle = (columnId) => {
+    const column = AVAILABLE_COLUMNS.find(col => col.id === columnId);
+    
+    // Prevent toggling mandatory columns
+    if (column?.mandatory) return;
+
+    setVisibleColumns(prev => {
+      if (prev.includes(columnId)) {
+        // Remove column (but keep at least one column)
+        if (prev.length > 1) {
+          return prev.filter(id => id !== columnId);
+        }
+        return prev;
+      } else {
+        // Add column
+        return [...prev, columnId];
+      }
+    });
+  };
 
   const handleSave = () => {
     // Save to localStorage for persistence
     localStorage.setItem('recordsPerPage', recordsPerPage.toString());
-    onSaveSettings(recordsPerPage);
+    localStorage.setItem('visibleColumns', JSON.stringify(visibleColumns));
+    onSaveSettings({ recordsPerPage, visibleColumns });
     onClose();
   };
 
   const handleReset = () => {
     setRecordsPerPage(8); // Reset to default
+    setVisibleColumns(DEFAULT_COLUMNS); // Reset to default columns
     localStorage.removeItem('recordsPerPage');
-    onSaveSettings(8);
+    localStorage.removeItem('visibleColumns');
+    onSaveSettings({ recordsPerPage: 8, visibleColumns: DEFAULT_COLUMNS });
     onClose();
   };
 
@@ -42,10 +89,12 @@ const SettingsModal = ({ open, onClose, currentRecordsPerPage, onSaveSettings })
       onClose={onClose}
       maxWidth="sm"
       fullWidth
+      fullScreen={isMobile}
       PaperProps={{
         sx: {
-          borderRadius: 2,
-          boxShadow: '0 8px 32px rgba(0,0,0,0.1)'
+          borderRadius: isMobile ? 0 : 2,
+          boxShadow: '0 8px 32px rgba(0,0,0,0.1)',
+          m: isMobile ? 0 : 2
         }
       }}
     >
@@ -55,22 +104,24 @@ const SettingsModal = ({ open, onClose, currentRecordsPerPage, onSaveSettings })
         gap: 1,
         background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
         color: 'white',
-        py: 2
+        py: { xs: 1.5, sm: 2 }
       }}>
-        <Settings />
-        <Typography variant="h6" fontWeight="600">
+        <Settings fontSize={isMobile ? "small" : "medium"} />
+        <Typography variant={isMobile ? "subtitle1" : "h6"} fontWeight="600">
           Display Settings
         </Typography>
       </DialogTitle>
 
       <DialogContent sx={{ mt: 3 }}>
-        <Box sx={{ mb: 3 }}>
+        {/* Records Per Page Setting */}
+        <Box sx={{ mb: 4 }}>
+          <Typography variant="subtitle1" fontWeight="600" sx={{ mb: 1 }}>
+            📄 Display Density
+          </Typography>
           <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
             Customize how many student records you want to see per page
           </Typography>
           
-          <Divider sx={{ mb: 3 }} />
-
           <FormControl fullWidth>
             <InputLabel id="records-per-page-label">Records Per Page</InputLabel>
             <Select
@@ -95,11 +146,75 @@ const SettingsModal = ({ open, onClose, currentRecordsPerPage, onSaveSettings })
               <MenuItem value={100}>100 records</MenuItem>
             </Select>
           </FormControl>
-
-          <Typography variant="caption" color="text.secondary" sx={{ mt: 2, display: 'block' }}>
-            💡 Your preference will be saved and applied automatically next time you visit
-          </Typography>
         </Box>
+
+        <Divider sx={{ my: 3 }} />
+
+        {/* Column Visibility Setting */}
+        <Box sx={{ mb: 3 }}>
+          <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 1 }}>
+            <ViewColumn sx={{ color: '#7c3aed' }} />
+            <Typography variant="subtitle1" fontWeight="600">
+              Table Columns
+            </Typography>
+          </Box>
+          <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
+            Select which columns to display in the student table
+          </Typography>
+
+          <Paper variant="outlined" sx={{ p: 2, bgcolor: '#fafafa' }}>
+            <FormGroup>
+              {AVAILABLE_COLUMNS.map((column) => (
+                <FormControlLabel
+                  key={column.id}
+                  control={
+                    <Checkbox
+                      checked={visibleColumns.includes(column.id)}
+                      onChange={() => handleColumnToggle(column.id)}
+                      disabled={column.mandatory}
+                      sx={{
+                        color: '#7c3aed',
+                        '&.Mui-checked': {
+                          color: '#7c3aed',
+                        },
+                        '&.Mui-disabled': {
+                          color: 'rgba(124, 58, 237, 0.5)',
+                        }
+                      }}
+                    />
+                  }
+                  label={
+                    <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                      <Typography variant="body2">
+                        {column.label}
+                      </Typography>
+                      {column.mandatory && (
+                        <Typography variant="caption" sx={{ 
+                          color: 'white',
+                          bgcolor: '#7c3aed',
+                          px: 1,
+                          py: 0.25,
+                          borderRadius: 1,
+                          fontSize: '0.65rem'
+                        }}>
+                          Required
+                        </Typography>
+                      )}
+                    </Box>
+                  }
+                />
+              ))}
+            </FormGroup>
+
+            <Typography variant="caption" color="text.secondary" sx={{ mt: 2, display: 'block', fontStyle: 'italic' }}>
+              ℹ️ At least one column must be selected. Required columns cannot be hidden.
+            </Typography>
+          </Paper>
+        </Box>
+
+        <Typography variant="caption" color="text.secondary" sx={{ display: 'block', textAlign: 'center', mt: 2 }}>
+          💡 Your preferences will be saved and applied automatically next time you visit
+        </Typography>
       </DialogContent>
 
       <DialogActions sx={{ p: 3, gap: 1 }}>

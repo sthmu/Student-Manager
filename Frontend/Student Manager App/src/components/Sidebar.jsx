@@ -24,7 +24,7 @@ import {
 const drawerWidth = 280;
 const collapsedWidth = 70;
 
-const Sidebar = ({ isOpen, onToggle, onAddStudent, onSettings, onLogout }) => {
+const Sidebar = ({ isOpen, onToggle, onAddStudent, onSettings, onLogout, isMobile }) => {
   return (
     <Drawer
       sx={{
@@ -37,11 +37,17 @@ const Sidebar = ({ isOpen, onToggle, onAddStudent, onSettings, onLogout }) => {
           background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
           color: 'white',
           transition: 'width 0.3s ease',
-          overflowX: 'hidden'
+          overflowX: 'hidden',
+          zIndex: { xs: 1200, md: 1100 }  // Higher z-index on mobile to overlay content
         },
       }}
-      variant="permanent"
+      variant={isMobile ? "temporary" : "permanent"}  // Temporary (overlay) on mobile, permanent on desktop
       anchor="left"
+      open={isOpen}
+      onClose={isMobile ? onToggle : undefined}  // Close on backdrop click for mobile
+      ModalProps={{
+        keepMounted: true, // Better mobile performance
+      }}
     >
       {/* System Title with Toggle Button */}
       <Box sx={{

@@ -8,11 +8,17 @@ import {
   Button,
   Grid,
   Box,
-  Alert
+  Alert,
+  useMediaQuery,
+  useTheme
 } from '@mui/material';
 import PersonAddIcon from '@mui/icons-material/PersonAdd';
+import { apiPost } from '../utils/api';
 
 const AddStudentModal = ({ open, onClose, onStudentAdded }) => {
+  const theme = useTheme();
+  const isMobile = useMediaQuery(theme.breakpoints.down('sm'));
+  
   const [formData, setFormData] = useState({
     name: '',
     email: '',
@@ -64,14 +70,7 @@ const AddStudentModal = ({ open, onClose, onStudentAdded }) => {
     setAlert({ show: false, message: '', severity: 'success' });
     
     try {
-      const response = await fetch('http://localhost:5000/api/students', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify(formData)
-      });
-      
+      const response = await apiPost('/students', formData);
       const data = await response.json();
       
       if (response.ok) {
@@ -140,10 +139,12 @@ const AddStudentModal = ({ open, onClose, onStudentAdded }) => {
       onClose={handleClose} 
       maxWidth="md" 
       fullWidth
+      fullScreen={isMobile}
       PaperProps={{
         sx: {
-          borderRadius: 2,
-          boxShadow: '0 8px 32px rgba(0,0,0,0.1)'
+          borderRadius: isMobile ? 0 : 2,
+          boxShadow: '0 8px 32px rgba(0,0,0,0.1)',
+          m: isMobile ? 0 : 2
         }
       }}
     >
@@ -152,6 +153,8 @@ const AddStudentModal = ({ open, onClose, onStudentAdded }) => {
         color: 'white',
         display: 'flex',
         alignItems: 'center',
+        fontSize: { xs: '1.1rem', sm: '1.25rem' },
+        py: { xs: 1.5, sm: 2 },
         gap: 1
       }}>
         <PersonAddIcon />
@@ -234,10 +237,16 @@ const AddStudentModal = ({ open, onClose, onStudentAdded }) => {
           </Grid>
         </DialogContent>
         
-        <DialogActions sx={{ px: 3, pb: 3 }}>
+        <DialogActions sx={{ 
+          px: { xs: 2, sm: 3 }, 
+          pb: { xs: 2, sm: 3 },
+          flexDirection: { xs: 'column', sm: 'row' },
+          gap: { xs: 1, sm: 0 }
+        }}>
           <Button 
             onClick={handleClose} 
             disabled={loading}
+            fullWidth={isMobile}
             sx={{ color: 'grey.600' }}
           >
             Cancel
@@ -246,6 +255,7 @@ const AddStudentModal = ({ open, onClose, onStudentAdded }) => {
             type="submit" 
             variant="contained" 
             disabled={loading}
+            fullWidth={isMobile}
             sx={{
               background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
               '&:hover': {

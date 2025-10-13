@@ -10,7 +10,9 @@ import {
   InputAdornment,
   IconButton,
   Tooltip,
-  Badge
+  Badge,
+  useMediaQuery,
+  useTheme
 } from '@mui/material';
 import { Search, FilterList } from '@mui/icons-material';
 import FilterPopup from './FilterPopup';
@@ -26,6 +28,8 @@ const SearchBar = ({
   currentFilter 
 }) => {
   const [filterAnchorEl, setFilterAnchorEl] = useState(null);
+  const theme = useTheme();
+  const isMobile = useMediaQuery(theme.breakpoints.down('sm'));
 
   const handleFilterClick = (event) => {
     setFilterAnchorEl(event.currentTarget);
@@ -42,16 +46,25 @@ const SearchBar = ({
   const isFilterOpen = Boolean(filterAnchorEl);
   const isFilterActive = currentFilter !== 'active'; // Show badge if not default filter
   return (
-    <Card sx={{ p: 2, mb: 3 }}>
-      <Box sx={{ display: 'flex', gap: 2, alignItems: 'center', mb: 2 }}>
+    <Card sx={{ p: { xs: 1.5, sm: 2 }, mb: 3 }}>
+      <Box sx={{ 
+        display: 'flex', 
+        gap: { xs: 1, sm: 2 }, 
+        alignItems: 'center', 
+        mb: 2,
+        flexDirection: { xs: 'column', sm: 'row' }
+      }}>
         <TextField
-          placeholder="Search by name, course, or address..."
+          placeholder={isMobile ? "Search..." : "Search by name, course, or address..."}
           variant="outlined"
-          size="medium"
+          size={isMobile ? "small" : "medium"}
           value={searchQuery}
           onChange={onSearchChange}
           onKeyPress={(e) => e.key === 'Enter' && onSearch()}
-          sx={{ flexGrow: 1 }}
+          sx={{ 
+            flexGrow: 1,
+            width: { xs: '100%', sm: 'auto' }
+          }}
           InputProps={{
             startAdornment: (
               <InputAdornment position="start">
@@ -63,9 +76,10 @@ const SearchBar = ({
         <Button 
           variant="contained" 
           onClick={onSearch}
+          fullWidth={isMobile}
           sx={{ 
-            height: 56,
-            px: 4,
+            height: { xs: 40, sm: 56 },
+            px: { xs: 2, sm: 4 },
             background: 'linear-gradient(45deg, #667eea 30%, #764ba2 90%)'
           }}
         >
@@ -77,8 +91,8 @@ const SearchBar = ({
           <IconButton
             onClick={handleFilterClick}
             sx={{
-              height: 56,
-              width: 56,
+              height: { xs: 40, sm: 56 },
+              width: { xs: 40, sm: 56 },
               border: '1px solid',
               borderColor: isFilterActive ? '#7c3aed' : 'rgba(0, 0, 0, 0.23)',
               backgroundColor: isFilterActive ? 'rgba(124, 58, 237, 0.08)' : 'transparent',
@@ -93,7 +107,10 @@ const SearchBar = ({
               color="secondary"
               invisible={!isFilterActive}
             >
-              <FilterList sx={{ color: isFilterActive ? '#7c3aed' : 'inherit' }} />
+              <FilterList sx={{ 
+                color: isFilterActive ? '#7c3aed' : 'inherit',
+                fontSize: { xs: 20, sm: 24 }
+              }} />
             </Badge>
           </IconButton>
         </Tooltip>
@@ -109,12 +126,18 @@ const SearchBar = ({
       </Box>
 
       {/* Select All Checkbox */}
-      <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+      <Box sx={{ 
+        display: 'flex', 
+        alignItems: 'center', 
+        gap: 1,
+        flexWrap: 'wrap'
+      }}>
         <Checkbox 
           checked={selectAll}
           onChange={onSelectAllChange}
+          size={isMobile ? "small" : "medium"}
         />
-        <Typography variant="body2">
+        <Typography variant={isMobile ? "caption" : "body2"}>
           Select All ({selectedCount} selected)
         </Typography>
         {selectedCount > 0 && (
@@ -122,7 +145,7 @@ const SearchBar = ({
             label={`${selectedCount} items selected`}
             color="primary"
             size="small"
-            sx={{ ml: 2 }}
+            sx={{ ml: { xs: 0, sm: 2 } }}
           />
         )}
       </Box>

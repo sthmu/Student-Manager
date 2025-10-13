@@ -53,6 +53,8 @@ const LoginPage = () => {
     }
   };
 
+
+  //validation logics
   const validateForm = () => {
     const newErrors = {};
     
@@ -74,6 +76,12 @@ const LoginPage = () => {
     return Object.keys(newErrors).length === 0;
   };
 
+
+  //when submitted validation is checked then
+  //and tried to connect to backend api using fetch post method
+  //if backend is not running error is shown
+  //otherwise the token frm the data is stored in local storage
+  //and user is navigated to dashboard page
   const handleSubmit = async (e) => {
     e.preventDefault();
     
@@ -289,7 +297,9 @@ const LoginPage = () => {
                 <Typography variant="body2" color="text.secondary">
                   Don't have an account?{' '}
                   <Link
-                    href="#"
+                    component="button"
+                    type="button"
+                    onClick={() => navigate('/register')}
                     variant="body2"
                     underline="hover"
                     sx={{ fontWeight: 600, cursor: 'pointer' }}

@@ -9,7 +9,7 @@ import {
   MenuItem
 } from '@mui/material';
 
-const TopBar = ({ user, onLogout }) => {
+const TopBar = ({ user, onLogout, pageTitle = 'Dashboard' }) => {
   const [userMenuAnchor, setUserMenuAnchor] = useState(null);
   
   const username = user?.email?.split('@')[0] || 'User';
@@ -32,7 +32,24 @@ const TopBar = ({ user, onLogout }) => {
         borderBottom: '1px solid #e0e0e0'
       }}
     >
-      <Toolbar sx={{ justifyContent: 'flex-end' }}>
+      <Toolbar sx={{ 
+        justifyContent: 'space-between',
+        minHeight: { xs: 56, sm: 64 }
+      }}>
+        {/* Left side - Page Title */}
+        <Box>
+          <Typography 
+            variant="h5" 
+            fontWeight="600"
+            sx={{ 
+              fontSize: { xs: '1.25rem', sm: '1.5rem' }
+            }}
+          >
+            {pageTitle}
+          </Typography>
+        </Box>
+
+        {/* Right side - User Menu */}
         <Box 
           sx={{ 
             display: 'flex', 
@@ -45,7 +62,10 @@ const TopBar = ({ user, onLogout }) => {
           }}
           onClick={handleUserMenuOpen}
         >
-          <Box sx={{ textAlign: 'right' }}>
+          <Box sx={{ 
+            textAlign: 'right',
+            display: { xs: 'none', sm: 'block' } // Hide text on mobile
+          }}>
             <Typography variant="body2" fontWeight="600">
               Welcome, {username}
             </Typography>

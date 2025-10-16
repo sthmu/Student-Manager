@@ -1,2 +1,118 @@
+# Dependencies
 node_modules/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+package-lock.json
+yarn.lock
+pnpm-lock.yaml
+
+# Environment variables
 .env
+.env.local
+.env.development
+.env.test
+.env.production.local
+.env.*.local
+
+# Logs
+logs/
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# OS files
+.DS_Store
+Thumbs.db
+desktop.ini
+*.swp
+*.swo
+*~
+
+# IDE/Editor files
+.vscode/
+!.vscode/extensions.json
+.idea/
+*.sublime-project
+*.sublime-workspace
+.project
+.classpath
+.settings/
+*.iml
+
+# Testing
+coverage/
+.nyc_output/
+*.lcov
+test-results/
+junit.xml
+
+# Temporary files
+tmp/
+temp/
+*.tmp
+*.bak
+*.backup
+
+# Azure
+.azure/
+local.settings.json
+__blobstorage__/
+__queuestorage__/
+__azurite_db*__.json
+
+# Build outputs
+dist/
+build/
+out/
+
+# Debug files
+*.pid
+*.seed
+*.pid.lock
+
+# Optional npm cache
+.npm
+.eslintcache
+
+# Database files
+*.sqlite
+*.sqlite3
+*.db
+
+# Backup files
+*.sql.gz
+backups/
+dumps/
+
+# Certificates & Keys
+*.pem
+*.key
+*.cert
+*.crt
+*.p12
+*.pfx
+
+# PM2
+.pm2/
+pm2.config.js
+
+# Docker
+.dockerignore
+docker-compose.override.yml
+
+# macOS
+.AppleDouble
+.LSOverride
+Icon
+._*
+
+# Windows
+ehthumbs.db
+Desktop.ini
+$RECYCLE.BIN/
+
+# Linux
+.Trash-*/
+.nfs*

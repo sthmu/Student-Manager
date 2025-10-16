@@ -1,4 +1,5 @@
 // API utility functions for authenticated requests
+import { clearAuth } from './auth';
 
 const API_BASE_URL = 'http://localhost:5000/api';
 
@@ -14,6 +15,12 @@ const getAuthHeaders = () => {
     'Content-Type': 'application/json',
     'Authorization': token ? `Bearer ${token}` : ''
   };
+};
+
+// Handle unauthorized access (401/403 errors)
+const handleUnauthorized = () => {
+  clearAuth();
+  window.location.href = '/?session=expired';
 };
 
 // Authenticated GET request
@@ -99,25 +106,8 @@ export const apiDelete = async (endpoint) => {
   }
 };
 
-// Handle unauthorized access
-const handleUnauthorized = () => {
-  // Clear stored auth data
-  localStorage.removeItem('token');
-  localStorage.removeItem('user');
-  
-  // Redirect to login
-  window.location.href = '/';
-};
-
-// Check if user is authenticated
-export const isAuthenticated = () => {
-  const token = getAuthToken();
-  return !!token;
-};
-
-// Logout function
+// Logout function (deprecated - use clearAuth from auth.js)
 export const logout = () => {
-  localStorage.removeItem('token');
-  localStorage.removeItem('user');
+  clearAuth();
   window.location.href = '/';
 };

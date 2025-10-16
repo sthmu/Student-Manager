@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
-import { Box, Typography, Button, CircularProgress, Alert, Pagination, useMediaQuery, useTheme, IconButton } from '@mui/material';
+import { useNavigate } from 'react-router-dom';
+import { Box, Typography, Button, CircularProgress, Alert, Pagination, useMediaQuery, useTheme, IconButton, Snackbar } from '@mui/material';
 import { Menu as MenuIcon } from '@mui/icons-material';
 import Sidebar from '../components/Sidebar';
 import TopBar from '../components/TopBar';
@@ -11,8 +12,10 @@ import ViewStudentModal from '../components/ViewStudentModal'; // ← Import Vie
 import SettingsModal from '../components/SettingsModal'; // ← Import SettingsModal
 import LoadingSpinner from '../components/LoadingSpinner'; // ← Import LoadingSpinner
 import { apiGet, apiPost, apiDelete } from '../utils/api'; // ← Import API utilities
+import { clearAuth, isAuthenticated, getTimeUntilExpiry, isTokenExpiringSoon } from '../utils/auth';
 
 const Dashboard = () => {
+  const navigate = useNavigate();
   const theme = useTheme();
   const isMobile = useMediaQuery(theme.breakpoints.down('md')); // < 900px
   const isTablet = useMediaQuery(theme.breakpoints.between('sm', 'md')); // 600px - 900px
@@ -23,6 +26,9 @@ const Dashboard = () => {
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedStudents, setSelectedStudents] = useState([]);
   const [selectAll, setSelectAll] = useState(false);
+  
+  // Session management
+  const [sessionWarning, setSessionWarning] = useState(false);
   
   // Sidebar responsive: closed by default on mobile/tablet, open on desktop
   const [sidebarOpen, setSidebarOpen] = useState(() => {
@@ -87,6 +93,25 @@ const Dashboard = () => {
   useEffect(() => {
     fetchStudents();
   }, [filterStatus]);
+
+  // Auto-logout on token expiry - Check every minute
+  useEffect(() => {
+    const checkAuth = () => {
+      if (!isAuthenticated()) {
+        handleLogout(true); // true = session expired
+      } else if (isTokenExpiringSoon()) {
+        setSessionWarning(true);
+      }
+    };
+
+    // Check immediately
+    checkAuth();
+
+    // Check every minute
+    const interval = setInterval(checkAuth, 60000);
+
+    return () => clearInterval(interval);
+  }, []);
 
   // Auto-close sidebar on mobile when screen resizes
   useEffect(() => {
@@ -250,11 +275,17 @@ const Dashboard = () => {
     setSortConfig(sortOption);
   };
 
-  const handleLogout = () => {
-    if (window.confirm('Are you sure you want to logout?')) {
-      localStorage.removeItem('token');
-      localStorage.removeItem('user');
-      window.location.href = '/';
+  const handleLogout = (isSessionExpired = false) => {
+    if (isSessionExpired) {
+      // Automatic logout due to session expiry
+      clearAuth();
+      navigate('/', { state: { message: 'Your session has expired. Please login again.' } });
+    } else {
+      // Manual logout
+      if (window.confirm('Are you sure you want to logout?')) {
+        clearAuth();
+        navigate('/');
+      }
     }
   };
 
@@ -441,7 +472,22 @@ const Dashboard = () => {
         currentVisibleColumns={visibleColumns}
         onSaveSettings={handleSaveSettings}
       />
-    </Box>        
+
+      {/* Session Warning Snackbar */}
+      <Snackbar
+        open={sessionWarning}
+        autoHideDuration={null}
+        message="⚠️ Your session will expire in 5 minutes"
+        anchorOrigin={{ vertical: 'top', horizontal: 'center' }}
+        ContentProps={{
+          sx: { 
+            bgcolor: 'warning.main',
+            color: 'warning.contrastText',
+            fontWeight: 'bold'
+          }
+        }}
+      />
+    </Box>
   );
 };
 

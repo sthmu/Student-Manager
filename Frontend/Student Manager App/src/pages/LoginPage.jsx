@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import {
   Container,
@@ -26,9 +26,11 @@ import {
   LockOutlined,
   School
 } from '@mui/icons-material';
+import { setAuthToken, isAuthenticated } from '../utils/auth';
 
 const LoginPage = () => {
   const navigate = useNavigate();
+  const location = window.location;
   const [formData, setFormData] = useState({
     email: '',
     password: '',
@@ -38,6 +40,21 @@ const LoginPage = () => {
   const [errors, setErrors] = useState({});
   const [loginError, setLoginError] = useState('');
   const [isLoading, setIsLoading] = useState(false);
+
+  // Redirect to dashboard if already authenticated
+  useEffect(() => {
+    if (isAuthenticated()) {
+      navigate('/dashboard', { replace: true });
+    }
+  }, [navigate]);
+
+  // Show session expired message if redirected from dashboard
+  useEffect(() => {
+    const state = history.state?.usr;
+    if (state?.message) {
+      setLoginError(state.message);
+    }
+  }, []);
 
   const handleChange = (e) => {
     const { name, value, checked } = e.target;
@@ -107,9 +124,8 @@ const LoginPage = () => {
       const data = await response.json();
       
       if (response.ok) {
-        // Save user data and token
-        localStorage.setItem('token', data.token || 'demo-token');
-        localStorage.setItem('user', JSON.stringify(data.user || { email: formData.email }));
+        // Save user data and token using auth utility
+        setAuthToken(data.token, data.user || { email: formData.email });
         
         // Redirect to dashboard
         navigate('/dashboard');

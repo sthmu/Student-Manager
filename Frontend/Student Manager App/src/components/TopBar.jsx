@@ -6,10 +6,14 @@ import {
   Typography,
   Avatar,
   Menu,
-  MenuItem
+  MenuItem,
+  TextField,
+  InputAdornment,
+  IconButton
 } from '@mui/material';
+import { Search as SearchIcon, Clear as ClearIcon } from '@mui/icons-material';
 
-const TopBar = ({ user, onLogout, pageTitle = 'Dashboard' }) => {
+const TopBar = ({ user, onLogout, pageTitle = 'Dashboard', searchQuery, onSearchChange, onSearch }) => {
   const [userMenuAnchor, setUserMenuAnchor] = useState(null);
   
   const username = user?.email?.split('@')[0] || 'User';
@@ -20,6 +24,17 @@ const TopBar = ({ user, onLogout, pageTitle = 'Dashboard' }) => {
 
   const handleUserMenuClose = () => {
     setUserMenuAnchor(null);
+  };
+
+  const handleClearSearch = () => {
+    onSearchChange({ target: { value: '' } });
+    onSearch();
+  };
+
+  const handleKeyPress = (e) => {
+    if (e.key === 'Enter') {
+      onSearch();
+    }
   };
 
   return (
@@ -34,10 +49,12 @@ const TopBar = ({ user, onLogout, pageTitle = 'Dashboard' }) => {
     >
       <Toolbar sx={{ 
         justifyContent: 'space-between',
-        minHeight: { xs: 56, sm: 64 }
+        gap: 2,
+        minHeight: { xs: 56, sm: 64 },
+        flexWrap: { xs: 'wrap', md: 'nowrap' }
       }}>
         {/* Left side - Page Title */}
-        <Box>
+        <Box sx={{ minWidth: { xs: '100%', md: 'auto' }, order: { xs: 1, md: 1 } }}>
           <Typography 
             variant="h5" 
             fontWeight="600"
@@ -49,6 +66,44 @@ const TopBar = ({ user, onLogout, pageTitle = 'Dashboard' }) => {
           </Typography>
         </Box>
 
+        {/* Center - Search Bar */}
+        <Box sx={{ 
+          flexGrow: 1, 
+          maxWidth: { xs: '100%', md: '500px' },
+          order: { xs: 3, md: 2 },
+          width: { xs: '100%', md: 'auto' }
+        }}>
+          <TextField
+            fullWidth
+            size="small"
+            placeholder="Search by name, email, or course..."
+            value={searchQuery}
+            onChange={onSearchChange}
+            onKeyPress={handleKeyPress}
+            InputProps={{
+              startAdornment: (
+                <InputAdornment position="start">
+                  <SearchIcon sx={{ color: 'text.secondary' }} />
+                </InputAdornment>
+              ),
+              endAdornment: searchQuery && (
+                <InputAdornment position="end">
+                  <IconButton size="small" onClick={handleClearSearch}>
+                    <ClearIcon fontSize="small" />
+                  </IconButton>
+                </InputAdornment>
+              ),
+              sx: {
+                bgcolor: '#f5f5f5',
+                borderRadius: 2,
+                '& fieldset': { border: 'none' },
+                '&:hover': { bgcolor: '#eeeeee' },
+                '&.Mui-focused': { bgcolor: 'white', boxShadow: '0 0 0 2px #667eea' }
+              }
+            }}
+          />
+        </Box>
+
         {/* Right side - User Menu */}
         <Box 
           sx={{ 
@@ -58,6 +113,7 @@ const TopBar = ({ user, onLogout, pageTitle = 'Dashboard' }) => {
             cursor: 'pointer',
             p: 1,
             borderRadius: 2,
+            order: { xs: 2, md: 3 },
             '&:hover': { bgcolor: '#f5f5f5' }
           }}
           onClick={handleUserMenuOpen}

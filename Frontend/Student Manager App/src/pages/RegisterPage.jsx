@@ -11,7 +11,8 @@ import {
   IconButton,
   Link,
   useMediaQuery,
-  useTheme
+  useTheme,
+  CircularProgress
 } from '@mui/material';
 import {
   Visibility,
@@ -291,7 +292,11 @@ const RegisterPage = () => {
                   },
                 }}
               >
-                {loading ? 'Creating Account...' : 'Create Account'}
+                {loading ? (
+                  <CircularProgress size={24} color="inherit" />
+                ) : (
+                  'Create Account'
+                )}
               </Button>
 
               {/* Login Link */}

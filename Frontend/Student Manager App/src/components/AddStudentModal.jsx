@@ -10,7 +10,8 @@ import {
   Box,
   Alert,
   useMediaQuery,
-  useTheme
+  useTheme,
+  CircularProgress
 } from '@mui/material';
 import PersonAddIcon from '@mui/icons-material/PersonAdd';
 import { apiPost } from '../utils/api';
@@ -263,7 +264,11 @@ const AddStudentModal = ({ open, onClose, onStudentAdded }) => {
               }
             }}
           >
-            {loading ? 'Adding...' : 'Add Student'}
+            {loading ? (
+              <CircularProgress size={24} color="inherit" />
+            ) : (
+              'Add Student'
+            )}
           </Button>
         </DialogActions>
       </form>

@@ -16,7 +16,8 @@ import {
   Checkbox,
   FormControlLabel,
   Link,
-  Stack
+  Stack,
+  CircularProgress
 } from '@mui/material';
 import {
   Visibility,
@@ -278,11 +279,15 @@ const LoginPage = () => {
                   fontWeight: 600,
                   background: 'linear-gradient(45deg, #667eea 30%, #764ba2 90%)',
                   '&:hover': {
-                    background: 'linear-gradient(45deg, #5568d3 30%, #653a8b 90%)',
+                    background: 'linear-gradient(45deg, #764ba2 30%, #667eea 90%)',
                   }
                 }}
               >
-                {isLoading ? 'Signing in...' : 'Sign In'}
+                {isLoading ? (
+                  <CircularProgress size={24} color="inherit" />
+                ) : (
+                  'Sign In'
+                )}
               </Button>
 
               <Divider sx={{ my: 2 }}>

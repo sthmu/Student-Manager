@@ -12,7 +12,8 @@ import {
   useMediaQuery,
   useTheme,
   Switch,
-  FormControlLabel
+  FormControlLabel,
+  CircularProgress
 } from '@mui/material';
 import EditIcon from '@mui/icons-material/Edit';
 import { apiPut } from '../utils/api';
@@ -289,7 +290,11 @@ const EditStudentModal = ({ open, onClose, student, onStudentUpdated }) => {
               }
             }}
           >
-            {loading ? 'Updating...' : 'Update Student'}
+            {loading ? (
+              <CircularProgress size={24} color="inherit" />
+            ) : (
+              'Update Student'
+            )}
           </Button>
         </DialogActions>
       </form>

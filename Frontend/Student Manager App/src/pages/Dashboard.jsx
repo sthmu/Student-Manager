@@ -3,12 +3,13 @@ import { Box, Typography, Button, CircularProgress, Alert, Pagination, useMediaQ
 import { Menu as MenuIcon } from '@mui/icons-material';
 import Sidebar from '../components/Sidebar';
 import TopBar from '../components/TopBar';
-import SearchBar from '../components/SearchBar';
+import ActionToolbar from '../components/ActionToolbar';
 import StudentTable from '../components/StudentTable';
 import AddStudentModal from '../components/AddStudentModal';
 import EditStudentModal from '../components/EditStudentModal'; // ← Import EditStudentModal
 import ViewStudentModal from '../components/ViewStudentModal'; // ← Import ViewStudentModal
 import SettingsModal from '../components/SettingsModal'; // ← Import SettingsModal
+import LoadingSpinner from '../components/LoadingSpinner'; // ← Import LoadingSpinner
 import { apiGet, apiPost, apiDelete } from '../utils/api'; // ← Import API utilities
 
 const Dashboard = () => {
@@ -299,6 +300,9 @@ const Dashboard = () => {
           onLogout={handleLogout}
           onToggleSidebar={handleToggleSidebar}
           sidebarOpen={sidebarOpen}
+          searchQuery={searchQuery}
+          onSearchChange={(e) => setSearchQuery(e.target.value)}
+          onSearch={handleSearch}
         />
 
         <Box sx={{ 
@@ -312,10 +316,7 @@ const Dashboard = () => {
             </Alert>
           )}
 
-          <SearchBar
-            searchQuery={searchQuery}
-            onSearchChange={(e) => setSearchQuery(e.target.value)}
-            onSearch={handleSearch}
+          <ActionToolbar
             selectAll={selectAll}
             onSelectAllChange={handleSelectAll}
             selectedCount={selectedStudents.length}
@@ -326,9 +327,7 @@ const Dashboard = () => {
           />
 
           {loading ? (
-            <Box sx={{ display: 'flex', justifyContent: 'center', py: 8 }}>
-              <CircularProgress />
-            </Box>
+            <LoadingSpinner message="Loading students..." size={50} />
           ) : (
             <>
               <StudentTable

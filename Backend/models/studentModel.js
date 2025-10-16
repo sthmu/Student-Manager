@@ -59,11 +59,11 @@ const Student = {
 
   // Update student
   update: async (id, studentData) => {
-    const { name, email, phone, course, enrolment_date } = studentData;
+    const { name, email, phone, course, enrolment_date, is_active } = studentData;
     
     const [result] = await db.query(
-      'UPDATE students SET name = ?, email = ?, phone = ?, course = ?, enrolment_date = ? WHERE id = ?',
-      [name, email, phone || null, course || null, enrolment_date || null, id]
+      'UPDATE students SET name = ?, email = ?, phone = ?, course = ?, enrolment_date = ?, is_active = ? WHERE id = ?',
+      [name, email, phone || null, course || null, enrolment_date || null, is_active !== undefined ? is_active : true, id]
     );
     
     return result.affectedRows; // Return number of affected rows

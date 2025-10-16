@@ -9,12 +9,21 @@ import {
   MenuItem,
   TextField,
   InputAdornment,
-  IconButton
+  IconButton,
+  ListItemIcon
 } from '@mui/material';
-import { Search as SearchIcon, Clear as ClearIcon } from '@mui/icons-material';
+import { 
+  Search as SearchIcon, 
+  Clear as ClearIcon,
+  Person,
+  Settings,
+  Logout
+} from '@mui/icons-material';
+import UserProfileModal from './UserProfileModal';
 
-const TopBar = ({ user, onLogout, pageTitle = 'Dashboard', searchQuery, onSearchChange, onSearch }) => {
+const TopBar = ({ user, onLogout, pageTitle = 'Dashboard', searchQuery, onSearchChange, onSearch, onOpenSettings }) => {
   const [userMenuAnchor, setUserMenuAnchor] = useState(null);
+  const [profileModalOpen, setProfileModalOpen] = useState(false);
   
   const username = user?.email?.split('@')[0] || 'User';
 
@@ -24,6 +33,23 @@ const TopBar = ({ user, onLogout, pageTitle = 'Dashboard', searchQuery, onSearch
 
   const handleUserMenuClose = () => {
     setUserMenuAnchor(null);
+  };
+
+  const handleProfileClick = () => {
+    setProfileModalOpen(true);
+    handleUserMenuClose();
+  };
+
+  const handleAccountClick = () => {
+    if (onOpenSettings) {
+      onOpenSettings();
+    }
+    handleUserMenuClose();
+  };
+
+  const handleLogoutClick = () => {
+    handleUserMenuClose();
+    onLogout();
   };
 
   const handleClearSearch = () => {
@@ -139,11 +165,36 @@ const TopBar = ({ user, onLogout, pageTitle = 'Dashboard', searchQuery, onSearch
           anchorEl={userMenuAnchor}
           open={Boolean(userMenuAnchor)}
           onClose={handleUserMenuClose}
+          PaperProps={{
+            sx: { minWidth: 200 }
+          }}
         >
-          <MenuItem onClick={handleUserMenuClose}>Profile</MenuItem>
-          <MenuItem onClick={handleUserMenuClose}>My Account</MenuItem>
-          <MenuItem onClick={onLogout}>Logout</MenuItem>
+          <MenuItem onClick={handleProfileClick}>
+            <ListItemIcon>
+              <Person fontSize="small" />
+            </ListItemIcon>
+            Profile
+          </MenuItem>
+          <MenuItem onClick={handleAccountClick}>
+            <ListItemIcon>
+              <Settings fontSize="small" />
+            </ListItemIcon>
+            Account Settings
+          </MenuItem>
+          <MenuItem onClick={handleLogoutClick}>
+            <ListItemIcon>
+              <Logout fontSize="small" />
+            </ListItemIcon>
+            Logout
+          </MenuItem>
         </Menu>
+
+        {/* User Profile Modal */}
+        <UserProfileModal
+          open={profileModalOpen}
+          onClose={() => setProfileModalOpen(false)}
+          user={user}
+        />
       </Toolbar>
     </AppBar>
   );

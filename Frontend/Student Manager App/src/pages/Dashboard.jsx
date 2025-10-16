@@ -303,6 +303,7 @@ const Dashboard = () => {
           searchQuery={searchQuery}
           onSearchChange={(e) => setSearchQuery(e.target.value)}
           onSearch={handleSearch}
+          onOpenSettings={handleOpenSettings}
         />
 
         <Box sx={{ 

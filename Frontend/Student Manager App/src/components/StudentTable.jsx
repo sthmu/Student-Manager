@@ -179,12 +179,19 @@ const StudentTable = ({
               <TableRow 
                 key={student.id}
                 hover
+                onClick={() => onView(student)}
                 sx={{ 
-                  '&:hover': { bgcolor: '#f9f9f9' },
+                  '&:hover': { 
+                    bgcolor: '#f9f9f9',
+                    cursor: 'pointer'
+                  },
                   bgcolor: selectedStudents.includes(student.id) ? '#f0f0ff' : 'inherit'
                 }}
               >
-                <TableCell padding="checkbox">
+                <TableCell 
+                  padding="checkbox"
+                  onClick={(e) => e.stopPropagation()}
+                >
                   <Checkbox 
                     checked={selectedStudents.includes(student.id)}
                     onChange={() => onSelectStudent(student.id)}
@@ -207,35 +214,60 @@ const StudentTable = ({
                 <TableCell 
                   align="center"
                   sx={{ px: { xs: 0.5, sm: 2 } }}
+                  onClick={(e) => e.stopPropagation()}
                 >
                   <Box sx={{ display: 'flex', gap: { xs: 0.5, sm: 1 }, justifyContent: 'center' }}>
+                    {/* View button - always available */}
                     <IconButton 
                       size="small" 
                       color="info"
-                      onClick={() => onView(student)}
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        onView(student);
+                      }}
                       title="View"
                       sx={{ p: { xs: 0.5, sm: 1 } }}
                     >
                       <Visibility fontSize={isMobile ? "small" : "small"} />
                     </IconButton>
-                    <IconButton 
-                      size="small" 
-                      color="primary"
-                      onClick={() => onEdit(student)}
-                      title="Edit"
-                      sx={{ p: { xs: 0.5, sm: 1 } }}
-                    >
-                      <Edit fontSize={isMobile ? "small" : "small"} />
-                    </IconButton>
-                    <IconButton 
-                      size="small" 
-                      color="error"
-                      sx={{ p: { xs: 0.5, sm: 1 } }}
-                      onClick={() => onDelete(student)}
-                      title="Delete"
-                    >
-                      <Delete fontSize="small" />
-                    </IconButton>
+                    
+                    {/* Edit and Delete buttons - only for active students */}
+                    {(student.is_active === 1 || student.is_active === true) ? (
+                      <>
+                        <IconButton 
+                          size="small" 
+                          color="primary"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            onEdit(student);
+                          }}
+                          title="Edit"
+                          sx={{ p: { xs: 0.5, sm: 1 } }}
+                        >
+                          <Edit fontSize={isMobile ? "small" : "small"} />
+                        </IconButton>
+                        <IconButton 
+                          size="small" 
+                          color="error"
+                          sx={{ p: { xs: 0.5, sm: 1 } }}
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            onDelete(student);
+                          }}
+                          title="Delete"
+                        >
+                          <Delete fontSize="small" />
+                        </IconButton>
+                      </>
+                    ) : (
+                      <Typography 
+                        variant="caption" 
+                        color="text.secondary"
+                        sx={{ px: 1, fontStyle: 'italic' }}
+                      >
+                        (Inactive)
+                      </Typography>
+                    )}
                   </Box>
                 </TableCell>
               </TableRow>

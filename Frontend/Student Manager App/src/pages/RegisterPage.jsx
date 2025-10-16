@@ -11,7 +11,8 @@ import {
   IconButton,
   Link,
   useMediaQuery,
-  useTheme
+  useTheme,
+  CircularProgress
 } from '@mui/material';
 import {
   Visibility,
@@ -48,7 +49,6 @@ const RegisterPage = () => {
       ...prev,
       [name]: value
     }));
-    // Clear error when user starts typing
     if (error) setError('');
   };
 
@@ -56,7 +56,6 @@ const RegisterPage = () => {
     e.preventDefault();
     setError('');
 
-    // Validation
     if (!formData.username || !formData.email || !formData.password || !formData.confirmPassword || !formData.adminCode) {
       setError('All fields are required');
       return;
@@ -91,17 +90,13 @@ const RegisterPage = () => {
       const data = await response.json();
 
       if (response.ok) {
-        // Save token and user info
         localStorage.setItem('token', data.token);
         localStorage.setItem('user', JSON.stringify(data.user));
-        
-        // Redirect to dashboard
         navigate('/dashboard');
       } else {
         setError(data.message || 'Registration failed');
       }
     } catch (error) {
-      console.error('Registration error:', error);
       setError('Cannot connect to server. Please try again.');
     } finally {
       setLoading(false);
@@ -291,7 +286,11 @@ const RegisterPage = () => {
                   },
                 }}
               >
-                {loading ? 'Creating Account...' : 'Create Account'}
+                {loading ? (
+                  <CircularProgress size={24} color="inherit" />
+                ) : (
+                  'Create Account'
+                )}
               </Button>
 
               {/* Login Link */}

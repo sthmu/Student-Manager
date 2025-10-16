@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import {
   Container,
@@ -16,7 +16,8 @@ import {
   Checkbox,
   FormControlLabel,
   Link,
-  Stack
+  Stack,
+  CircularProgress
 } from '@mui/material';
 import {
   Visibility,
@@ -25,6 +26,7 @@ import {
   LockOutlined,
   School
 } from '@mui/icons-material';
+import { setAuthToken, isAuthenticated } from '../utils/auth';
 
 const LoginPage = () => {
   const navigate = useNavigate();
@@ -38,13 +40,25 @@ const LoginPage = () => {
   const [loginError, setLoginError] = useState('');
   const [isLoading, setIsLoading] = useState(false);
 
+  useEffect(() => {
+    if (isAuthenticated()) {
+      navigate('/dashboard', { replace: true });
+    }
+  }, [navigate]);
+
+  useEffect(() => {
+    const state = history.state?.usr;
+    if (state?.message) {
+      setLoginError(state.message);
+    }
+  }, []);
+
   const handleChange = (e) => {
     const { name, value, checked } = e.target;
     setFormData(prev => ({
       ...prev,
       [name]: name === 'rememberMe' ? checked : value
     }));
-    // Clear error when user starts typing
     if (errors[name]) {
       setErrors(prev => ({ ...prev, [name]: '' }));
     }
@@ -53,19 +67,15 @@ const LoginPage = () => {
     }
   };
 
-
-  //validation logics
   const validateForm = () => {
     const newErrors = {};
     
-    // Email validation
     if (!formData.email) {
       newErrors.email = 'Email is required';
     } else if (!/\S+@\S+\.\S+/.test(formData.email)) {
       newErrors.email = 'Please enter a valid email address';
     }
 
-    // Password validation
     if (!formData.password) {
       newErrors.password = 'Password is required';
     } else if (formData.password.length < 6) {
@@ -77,11 +87,6 @@ const LoginPage = () => {
   };
 
 
-  //when submitted validation is checked then
-  //and tried to connect to backend api using fetch post method
-  //if backend is not running error is shown
-  //otherwise the token frm the data is stored in local storage
-  //and user is navigated to dashboard page
   const handleSubmit = async (e) => {
     e.preventDefault();
     
@@ -93,7 +98,6 @@ const LoginPage = () => {
     setLoginError('');
 
     try {
-      // Connect to backend API
       const response = await fetch('http://localhost:5000/api/auth/login', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -106,11 +110,7 @@ const LoginPage = () => {
       const data = await response.json();
       
       if (response.ok) {
-        // Save user data and token
-        localStorage.setItem('token', data.token || 'demo-token');
-        localStorage.setItem('user', JSON.stringify(data.user || { email: formData.email }));
-        
-        // Redirect to dashboard
+        setAuthToken(data.token, data.user || { email: formData.email });
         navigate('/dashboard');
       } else {
         setLoginError(data.message || 'Login failed');
@@ -118,7 +118,6 @@ const LoginPage = () => {
       
     } catch (error) {
       setLoginError('Cannot connect to server. Make sure backend is running on port 5000.');
-      console.error('Login error:', error);
     } finally {
       setIsLoading(false);
     }
@@ -278,11 +277,15 @@ const LoginPage = () => {
                   fontWeight: 600,
                   background: 'linear-gradient(45deg, #667eea 30%, #764ba2 90%)',
                   '&:hover': {
-                    background: 'linear-gradient(45deg, #5568d3 30%, #653a8b 90%)',
+                    background: 'linear-gradient(45deg, #764ba2 30%, #667eea 90%)',
                   }
                 }}
               >
-                {isLoading ? 'Signing in...' : 'Sign In'}
+                {isLoading ? (
+                  <CircularProgress size={24} color="inherit" />
+                ) : (
+                  'Sign In'
+                )}
               </Button>
 
               <Divider sx={{ my: 2 }}>

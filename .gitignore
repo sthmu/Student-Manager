@@ -1,0 +1,99 @@
+# Root-level gitignore for Student Manager Project
+
+# OS files
+.DS_Store
+.AppleDouble
+.LSOverride
+Icon
+._*
+Thumbs.db
+ehthumbs.db
+Desktop.ini
+$RECYCLE.BIN/
+*.swp
+*.swo
+*~
+
+# IDE/Editor files (global)
+.vscode/
+!.vscode/extensions.json
+.idea/
+*.sublime-project
+*.sublime-workspace
+*.iml
+
+# Logs
+logs/
+*.log
+
+# Temporary files
+tmp/
+temp/
+*.tmp
+*.bak
+*.backup
+
+# Azure deployment files
+.azure/
+.deployment.log
+
+# Documentation generated files
+docs/_build/
+site/
+
+# Node modules at root (if any)
+node_modules/
+
+# Environment variables at root
+.env
+.env.local
+.env.*.local
+
+# Build artifacts
+dist/
+build/
+out/
+
+# Coverage reports
+coverage/
+
+# Database backups
+*.sql
+*.sql.gz
+backups/
+dumps/
+
+# Certificates & Keys
+*.pem
+*.key
+*.cert
+*.crt
+*.p12
+*.pfx
+
+# Compressed files
+*.zip
+*.tar.gz
+*.rar
+
+# Cache folders
+.cache/
+.npm/
+.yarn/
+.pnpm-store/
+
+# macOS
+.Spotlight-V100
+.Trashes
+
+# Linux
+.Trash-*/
+.nfs*
+
+# Windows
+[Dd]esktop.ini
+*.lnk
+
+# Test results
+test-results/
+junit.xml

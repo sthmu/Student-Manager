@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import {
   Dialog,
   DialogTitle,
@@ -11,12 +11,14 @@ import {
   Alert,
   useMediaQuery,
   useTheme,
+  Switch,
+  FormControlLabel,
   CircularProgress
 } from '@mui/material';
-import PersonAddIcon from '@mui/icons-material/PersonAdd';
-import { apiPost } from '../utils/api';
+import EditIcon from '@mui/icons-material/Edit';
+import { apiPut } from '../utils/api';
 
-const AddStudentModal = ({ open, onClose, onStudentAdded }) => {
+const EditStudentModal = ({ open, onClose, student, onStudentUpdated }) => {
   const theme = useTheme();
   const isMobile = useMediaQuery(theme.breakpoints.down('sm'));
   
@@ -25,17 +27,32 @@ const AddStudentModal = ({ open, onClose, onStudentAdded }) => {
     email: '',
     phone: '',
     course: '',
-    enrolment_date: ''
+    enrolment_date: '',
+    is_active: true
   });
   const [errors, setErrors] = useState({});
   const [loading, setLoading] = useState(false);
   const [alert, setAlert] = useState({ show: false, message: '', severity: 'success' });
 
+  // Populate form when student prop changes
+  useEffect(() => {
+    if (student) {
+      setFormData({
+        name: student.name || '',
+        email: student.email || '',
+        phone: student.phone || '',
+        course: student.course || '',
+        enrolment_date: student.enrolment_date ? student.enrolment_date.split('T')[0] : '',
+        is_active: student.is_active === 1 || student.is_active === true
+      });
+    }
+  }, [student]);
+
   const handleChange = (e) => {
-    const { name, value } = e.target;
+    const { name, value, checked } = e.target;
     setFormData(prev => ({
       ...prev,
-      [name]: value
+      [name]: name === 'is_active' ? checked : value
     }));
     // Clear error when user starts typing
     if (errors[name]) {
@@ -71,28 +88,19 @@ const AddStudentModal = ({ open, onClose, onStudentAdded }) => {
     setAlert({ show: false, message: '', severity: 'success' });
     
     try {
-      const response = await apiPost('/students', formData);
+      const response = await apiPut(`/students/${student.id}`, formData);
       const data = await response.json();
       
       if (response.ok) {
         setAlert({ 
           show: true, 
-          message: 'Student added successfully!', 
+          message: 'Student updated successfully!', 
           severity: 'success' 
         });
         
-        // Reset form
-        setFormData({
-          name: '',
-          email: '',
-          phone: '',
-          course: '',
-          enrolment_date: ''
-        });
-        
         // Call parent callback to refresh student list
-        if (onStudentAdded) {
-          onStudentAdded(data.student);
+        if (onStudentUpdated) {
+          onStudentUpdated(data.student);
         }
         
         // Close modal after 1 second
@@ -104,13 +112,13 @@ const AddStudentModal = ({ open, onClose, onStudentAdded }) => {
       } else {
         setAlert({ 
           show: true, 
-          message: data.message || 'Failed to add student', 
+          message: data.message || 'Failed to update student', 
           severity: 'error' 
         });
       }
       
     } catch (error) {
-      console.error('Error adding student:', error);
+      console.error('Error updating student:', error);
       setAlert({ 
         show: true, 
         message: 'Cannot connect to server. Please check if backend is running.', 
@@ -122,17 +130,12 @@ const AddStudentModal = ({ open, onClose, onStudentAdded }) => {
   };
 
   const handleClose = () => {
-    setFormData({
-      name: '',
-      email: '',
-      phone: '',
-      course: '',
-      enrolment_date: ''
-    });
     setErrors({});
     setAlert({ show: false, message: '', severity: 'success' });
     onClose();
   };
+
+  if (!student) return null;
 
   return (
     <Dialog 
@@ -158,8 +161,8 @@ const AddStudentModal = ({ open, onClose, onStudentAdded }) => {
         py: { xs: 1.5, sm: 2 },
         gap: 1
       }}>
-        <PersonAddIcon />
-        Add New Student
+        <EditIcon />
+        Edit Student
       </DialogTitle>
       
       <form onSubmit={handleSubmit}>
@@ -235,6 +238,29 @@ const AddStudentModal = ({ open, onClose, onStudentAdded }) => {
                 }}
               />
             </Grid>
+            
+            <Grid item xs={12}>
+              <FormControlLabel
+                control={
+                  <Switch
+                    checked={formData.is_active}
+                    onChange={handleChange}
+                    name="is_active"
+                    color="primary"
+                  />
+                }
+                label={
+                  <Box>
+                    <Box sx={{ fontWeight: 500 }}>
+                      Active Status
+                    </Box>
+                    <Box sx={{ fontSize: '0.875rem', color: 'text.secondary' }}>
+                      {formData.is_active ? 'Student is currently active' : 'Student is currently inactive'}
+                    </Box>
+                  </Box>
+                }
+              />
+            </Grid>
           </Grid>
         </DialogContent>
         
@@ -267,7 +293,7 @@ const AddStudentModal = ({ open, onClose, onStudentAdded }) => {
             {loading ? (
               <CircularProgress size={24} color="inherit" />
             ) : (
-              'Add Student'
+              'Update Student'
             )}
           </Button>
         </DialogActions>
@@ -276,4 +302,4 @@ const AddStudentModal = ({ open, onClose, onStudentAdded }) => {
   );
 };
 
-export default AddStudentModal;
+export default EditStudentModal;

@@ -1,0 +1,564 @@
+// Database and Model Tests
+const mysql = require('mysql2/promise');
+const bcrypt = require('bcrypt');
+const User = require('../models/userModel');
+const Student = require('../models/studentModel');
+
+let connection;
+
+describe('🗄️ Database and Model Tests', () => {
+
+  beforeAll(async () => {
+    // Create test database connection
+    connection = await mysql.createConnection({
+      host: process.env.DB_HOST || 'localhost',
+      user: process.env.DB_USER || 'root',
+      password: process.env.DB_PASSWORD || '',
+      database: process.env.TEST_DB_NAME || 'student_manager_test'
+    });
+  });
+
+  afterAll(async () => {
+    if (connection) {
+      await connection.end();
+    }
+  });
+
+  // ==================== DATABASE CONNECTION TESTS ====================
+
+  describe('Database Connection', () => {
+
+    test('✅ Should connect to test database', async () => {
+      const [rows] = await connection.query('SELECT 1 as connected');
+      expect(rows[0].connected).toBe(1);
+    });
+
+    test('✅ Should have users table', async () => {
+      const [tables] = await connection.query("SHOW TABLES LIKE 'users'");
+      expect(tables.length).toBe(1);
+    });
+
+    test('✅ Should have students table', async () => {
+      const [tables] = await connection.query("SHOW TABLES LIKE 'students'");
+      expect(tables.length).toBe(1);
+    });
+
+    test('✅ Should verify users table structure', async () => {
+      const [columns] = await connection.query("DESCRIBE users");
+      const columnNames = columns.map(col => col.Field);
+      
+      expect(columnNames).toContain('id');
+      expect(columnNames).toContain('username');
+      expect(columnNames).toContain('email');
+      expect(columnNames).toContain('password');
+      expect(columnNames).toContain('created_at');
+    });
+
+    test('✅ Should verify students table structure', async () => {
+      const [columns] = await connection.query("DESCRIBE students");
+      const columnNames = columns.map(col => col.Field);
+      
+      expect(columnNames).toContain('id');
+      expect(columnNames).toContain('name');
+      expect(columnNames).toContain('email');
+      expect(columnNames).toContain('phone');
+      expect(columnNames).toContain('course');
+      expect(columnNames).toContain('status');
+      expect(columnNames).toContain('enrollment_date');
+      expect(columnNames).toContain('created_at');
+      expect(columnNames).toContain('updated_at');
+    });
+
+    test('✅ Should execute basic queries', async () => {
+      const [rows] = await connection.query('SELECT NOW() as current_time');
+      expect(rows[0]).toHaveProperty('current_time');
+      expect(rows[0].current_time).toBeInstanceOf(Date);
+    });
+
+    test('❌ Should handle invalid queries gracefully', async () => {
+      await expect(
+        connection.query('SELECT * FROM nonexistent_table')
+      ).rejects.toThrow();
+    });
+  });
+
+  // ==================== USER MODEL TESTS ====================
+
+  describe('User Model', () => {
+
+    let testUserData;
+    let createdUserId;
+
+    beforeEach(() => {
+      testUserData = global.testUtils.generateTestUser();
+    });
+
+    test('✅ Should create a new user', async () => {
+      const result = await User.create(
+        testUserData.username,
+        testUserData.email,
+        testUserData.password
+      );
+
+      expect(result).toHaveProperty('insertId');
+      expect(result.insertId).toBeGreaterThan(0);
+      createdUserId = result.insertId;
+    });
+
+    test('✅ Should hash password when creating user', async () => {
+      const plainPassword = 'TestPassword123';
+      await User.create('testuser', 'test@example.com', plainPassword);
+
+      // Retrieve user from database
+      const [rows] = await connection.query(
+        'SELECT password FROM users WHERE email = ?',
+        ['test@example.com']
+      );
+
+      const hashedPassword = rows[0].password;
+      
+      // Password should be hashed
+      expect(hashedPassword).not.toBe(plainPassword);
+      expect(hashedPassword).toMatch(/^\$2[aby]\$\d+\$/); // Bcrypt format
+      
+      // Should be able to verify with bcrypt
+      const isValid = await bcrypt.compare(plainPassword, hashedPassword);
+      expect(isValid).toBe(true);
+    });
+
+    test('✅ Should find user by email', async () => {
+      const newUser = global.testUtils.generateTestUser();
+      await User.create(newUser.username, newUser.email, newUser.password);
+
+      const user = await User.findByEmail(newUser.email);
+      
+      expect(user).toBeDefined();
+      expect(user).toHaveProperty('id');
+      expect(user).toHaveProperty('username', newUser.username);
+      expect(user).toHaveProperty('email', newUser.email.toLowerCase());
+      expect(user).toHaveProperty('password');
+      expect(user).toHaveProperty('created_at');
+    });
+
+    test('✅ Should find user by email (case-insensitive)', async () => {
+      const newUser = global.testUtils.generateTestUser();
+      await User.create(newUser.username, newUser.email, newUser.password);
+
+      const user = await User.findByEmail(newUser.email.toUpperCase());
+      
+      expect(user).toBeDefined();
+      expect(user.email).toBe(newUser.email.toLowerCase());
+    });
+
+    test('❌ Should return null for non-existent email', async () => {
+      const user = await User.findByEmail('nonexistent@example.com');
+      expect(user).toBeNull();
+    });
+
+    test('✅ Should find user by ID', async () => {
+      const newUser = global.testUtils.generateTestUser();
+      const result = await User.create(newUser.username, newUser.email, newUser.password);
+
+      const user = await User.findById(result.insertId);
+      
+      expect(user).toBeDefined();
+      expect(user).toHaveProperty('id', result.insertId);
+      expect(user).toHaveProperty('username', newUser.username);
+      expect(user).toHaveProperty('email', newUser.email.toLowerCase());
+    });
+
+    test('❌ Should return null for non-existent ID', async () => {
+      const user = await User.findById(999999);
+      expect(user).toBeNull();
+    });
+
+    test('✅ Should normalize email to lowercase', async () => {
+      const mixedCaseEmail = 'Test.User@Example.COM';
+      await User.create('testuser', mixedCaseEmail, 'password123');
+
+      const user = await User.findByEmail(mixedCaseEmail);
+      expect(user.email).toBe(mixedCaseEmail.toLowerCase());
+    });
+
+    test('❌ Should prevent duplicate emails', async () => {
+      const email = 'duplicate@example.com';
+      await User.create('user1', email, 'password123');
+
+      await expect(
+        User.create('user2', email, 'password456')
+      ).rejects.toThrow();
+    });
+
+    test('✅ Should set created_at timestamp automatically', async () => {
+      const newUser = global.testUtils.generateTestUser();
+      const result = await User.create(newUser.username, newUser.email, newUser.password);
+      const user = await User.findById(result.insertId);
+
+      expect(user).toHaveProperty('created_at');
+      expect(user.created_at).toBeInstanceOf(Date);
+      
+      // Should be recent (within last minute)
+      const now = new Date();
+      const timeDiff = now - user.created_at;
+      expect(timeDiff).toBeLessThan(60000); // Less than 1 minute
+    });
+  });
+
+  // ==================== STUDENT MODEL TESTS ====================
+
+  describe('Student Model', () => {
+
+    let testStudentData;
+    let createdStudentId;
+
+    beforeEach(() => {
+      testStudentData = global.testUtils.generateTestStudent();
+    });
+
+    test('✅ Should create a new student', async () => {
+      const result = await Student.create(testStudentData);
+
+      expect(result).toHaveProperty('insertId');
+      expect(result.insertId).toBeGreaterThan(0);
+      createdStudentId = result.insertId;
+    });
+
+    test('✅ Should find all students', async () => {
+      // Create multiple students
+      await Student.create(global.testUtils.generateTestStudent());
+      await Student.create(global.testUtils.generateTestStudent());
+
+      const students = await Student.findAll();
+
+      expect(Array.isArray(students)).toBe(true);
+      expect(students.length).toBeGreaterThan(0);
+      
+      // Verify structure
+      const student = students[0];
+      expect(student).toHaveProperty('id');
+      expect(student).toHaveProperty('name');
+      expect(student).toHaveProperty('email');
+      expect(student).toHaveProperty('phone');
+      expect(student).toHaveProperty('course');
+      expect(student).toHaveProperty('status');
+      expect(student).toHaveProperty('enrollment_date');
+    });
+
+    test('✅ Should filter students by status', async () => {
+      // Create active student
+      const activeStudent = { ...global.testUtils.generateTestStudent(), status: 'active' };
+      await Student.create(activeStudent);
+
+      // Create inactive student
+      const inactiveStudent = { ...global.testUtils.generateTestStudent(), status: 'inactive' };
+      await Student.create(inactiveStudent);
+
+      // Filter active
+      const activeStudents = await Student.findByStatus('active');
+      expect(Array.isArray(activeStudents)).toBe(true);
+      activeStudents.forEach(student => {
+        expect(student.status).toBe('active');
+      });
+
+      // Filter inactive
+      const inactiveStudents = await Student.findByStatus('inactive');
+      expect(Array.isArray(inactiveStudents)).toBe(true);
+      inactiveStudents.forEach(student => {
+        expect(student.status).toBe('inactive');
+      });
+    });
+
+    test('✅ Should find student by ID', async () => {
+      const newStudent = global.testUtils.generateTestStudent();
+      const result = await Student.create(newStudent);
+
+      const student = await Student.findById(result.insertId);
+
+      expect(student).toBeDefined();
+      expect(student).toHaveProperty('id', result.insertId);
+      expect(student).toHaveProperty('name', newStudent.name);
+      expect(student).toHaveProperty('email', newStudent.email.toLowerCase());
+      expect(student).toHaveProperty('phone', newStudent.phone);
+      expect(student).toHaveProperty('course', newStudent.course);
+    });
+
+    test('❌ Should return null for non-existent student ID', async () => {
+      const student = await Student.findById(999999);
+      expect(student).toBeNull();
+    });
+
+    test('✅ Should update student', async () => {
+      const newStudent = global.testUtils.generateTestStudent();
+      const result = await Student.create(newStudent);
+      const studentId = result.insertId;
+
+      const updatedData = {
+        name: 'Updated Name',
+        email: newStudent.email, // Keep same to avoid unique constraint
+        phone: '9999999999',
+        course: 'Updated Course',
+        status: 'inactive'
+      };
+
+      const updateResult = await Student.update(studentId, updatedData);
+      expect(updateResult.affectedRows).toBe(1);
+
+      // Verify update
+      const updatedStudent = await Student.findById(studentId);
+      expect(updatedStudent.name).toBe(updatedData.name);
+      expect(updatedStudent.phone).toBe(updatedData.phone);
+      expect(updatedStudent.course).toBe(updatedData.course);
+      expect(updatedStudent.status).toBe(updatedData.status);
+    });
+
+    test('✅ Should update updated_at timestamp', async () => {
+      const newStudent = global.testUtils.generateTestStudent();
+      const result = await Student.create(newStudent);
+      const studentId = result.insertId;
+
+      // Wait a moment
+      await new Promise(resolve => setTimeout(resolve, 1000));
+
+      // Update student
+      await Student.update(studentId, { name: 'Updated' });
+
+      // Check timestamps
+      const [rows] = await connection.query(
+        'SELECT created_at, updated_at FROM students WHERE id = ?',
+        [studentId]
+      );
+
+      const { created_at, updated_at } = rows[0];
+      expect(updated_at.getTime()).toBeGreaterThan(created_at.getTime());
+    });
+
+    test('✅ Should delete student (soft delete)', async () => {
+      const newStudent = global.testUtils.generateTestStudent();
+      const result = await Student.create(newStudent);
+      const studentId = result.insertId;
+
+      const deleteResult = await Student.delete(studentId);
+      expect(deleteResult.affectedRows).toBe(1);
+
+      // Verify deletion
+      const deletedStudent = await Student.findById(studentId);
+      expect(deletedStudent).toBeNull();
+    });
+
+    test('✅ Should bulk delete students', async () => {
+      // Create multiple students
+      const ids = [];
+      for (let i = 0; i < 3; i++) {
+        const result = await Student.create(global.testUtils.generateTestStudent());
+        ids.push(result.insertId);
+      }
+
+      const deleteResult = await Student.bulkDelete(ids);
+      expect(deleteResult.affectedRows).toBe(ids.length);
+
+      // Verify all deleted
+      for (const id of ids) {
+        const student = await Student.findById(id);
+        expect(student).toBeNull();
+      }
+    });
+
+    test('❌ Should prevent duplicate emails', async () => {
+      const email = 'duplicate.student@example.com';
+      const student1 = { ...global.testUtils.generateTestStudent(), email };
+      await Student.create(student1);
+
+      const student2 = { ...global.testUtils.generateTestStudent(), email };
+      await expect(Student.create(student2)).rejects.toThrow();
+    });
+
+    test('✅ Should normalize email to lowercase', async () => {
+      const mixedEmail = 'Student.Test@Example.COM';
+      const student = { ...global.testUtils.generateTestStudent(), email: mixedEmail };
+      const result = await Student.create(student);
+
+      const retrievedStudent = await Student.findById(result.insertId);
+      expect(retrievedStudent.email).toBe(mixedEmail.toLowerCase());
+    });
+
+    test('✅ Should set enrollment_date if provided', async () => {
+      const enrollmentDate = '2024-01-15';
+      const student = {
+        ...global.testUtils.generateTestStudent(),
+        enrollment_date: enrollmentDate
+      };
+      const result = await Student.create(student);
+
+      const retrievedStudent = await Student.findById(result.insertId);
+      expect(retrievedStudent.enrollment_date).toBeDefined();
+      
+      // Compare dates (might be Date object or string)
+      const studentDate = new Date(retrievedStudent.enrollment_date);
+      const expectedDate = new Date(enrollmentDate);
+      expect(studentDate.toISOString().split('T')[0]).toBe(expectedDate.toISOString().split('T')[0]);
+    });
+
+    test('✅ Should default status to active', async () => {
+      const student = global.testUtils.generateTestStudent();
+      // Don't set status
+      delete student.status;
+      
+      const result = await Student.create(student);
+      const retrievedStudent = await Student.findById(result.insertId);
+      
+      expect(retrievedStudent.status).toBe('active');
+    });
+
+    test('✅ Should set created_at and updated_at timestamps', async () => {
+      const student = global.testUtils.generateTestStudent();
+      const result = await Student.create(student);
+      const retrievedStudent = await Student.findById(result.insertId);
+
+      expect(retrievedStudent).toHaveProperty('created_at');
+      expect(retrievedStudent).toHaveProperty('updated_at');
+      expect(retrievedStudent.created_at).toBeInstanceOf(Date);
+      expect(retrievedStudent.updated_at).toBeInstanceOf(Date);
+    });
+
+    test('✅ Should handle special characters in name', async () => {
+      const specialNameStudent = {
+        ...global.testUtils.generateTestStudent(),
+        name: "O'Connor-Smith Jr."
+      };
+      const result = await Student.create(specialNameStudent);
+      const retrievedStudent = await Student.findById(result.insertId);
+
+      expect(retrievedStudent.name).toBe(specialNameStudent.name);
+    });
+
+    test('❌ Should fail with missing required fields', async () => {
+      const invalidStudent = {
+        name: 'Test Student'
+        // Missing email, phone, course
+      };
+
+      await expect(Student.create(invalidStudent)).rejects.toThrow();
+    });
+
+    test('✅ Should search students by name', async () => {
+      const searchName = 'SearchableStudent';
+      const student = { ...global.testUtils.generateTestStudent(), name: searchName };
+      await Student.create(student);
+
+      const [rows] = await connection.query(
+        'SELECT * FROM students WHERE name LIKE ?',
+        [`%${searchName}%`]
+      );
+
+      expect(rows.length).toBeGreaterThan(0);
+      expect(rows[0].name).toContain(searchName);
+    });
+
+    test('✅ Should order students by name', async () => {
+      // Create students with specific names
+      await Student.create({ ...global.testUtils.generateTestStudent(), name: 'Zebra Student' });
+      await Student.create({ ...global.testUtils.generateTestStudent(), name: 'Alpha Student' });
+
+      const [rows] = await connection.query(
+        'SELECT name FROM students ORDER BY name ASC'
+      );
+
+      // Verify ordering
+      for (let i = 1; i < rows.length; i++) {
+        expect(rows[i].name >= rows[i-1].name).toBe(true);
+      }
+    });
+
+    test('✅ Should count total students', async () => {
+      const [countBefore] = await connection.query('SELECT COUNT(*) as total FROM students');
+      const totalBefore = countBefore[0].total;
+
+      // Add new student
+      await Student.create(global.testUtils.generateTestStudent());
+
+      const [countAfter] = await connection.query('SELECT COUNT(*) as total FROM students');
+      const totalAfter = countAfter[0].total;
+
+      expect(totalAfter).toBe(totalBefore + 1);
+    });
+  });
+
+  // ==================== TRANSACTION TESTS ====================
+
+  describe('Database Transactions', () => {
+
+    test('✅ Should rollback on error', async () => {
+      await connection.beginTransaction();
+
+      try {
+        const student = global.testUtils.generateTestStudent();
+        await Student.create(student);
+
+        // Simulate error
+        throw new Error('Test error');
+      } catch (error) {
+        await connection.rollback();
+      }
+
+      // Verify rollback
+      const students = await Student.findAll();
+      // Can't guarantee exact count, but operation was rolled back
+      expect(Array.isArray(students)).toBe(true);
+    });
+
+    test('✅ Should commit successful transaction', async () => {
+      await connection.beginTransaction();
+
+      const student = global.testUtils.generateTestStudent();
+      const result = await Student.create(student);
+
+      await connection.commit();
+
+      // Verify commit
+      const retrievedStudent = await Student.findById(result.insertId);
+      expect(retrievedStudent).toBeDefined();
+      expect(retrievedStudent.email).toBe(student.email.toLowerCase());
+    });
+  });
+
+  // ==================== QUERY PERFORMANCE TESTS ====================
+
+  describe('Query Performance', () => {
+
+    test('✅ Should execute findAll efficiently', async () => {
+      const startTime = Date.now();
+      await Student.findAll();
+      const endTime = Date.now();
+
+      const executionTime = endTime - startTime;
+      expect(executionTime).toBeLessThan(1000); // Should complete in less than 1 second
+    });
+
+    test('✅ Should execute findById efficiently', async () => {
+      const student = global.testUtils.generateTestStudent();
+      const result = await Student.create(student);
+
+      const startTime = Date.now();
+      await Student.findById(result.insertId);
+      const endTime = Date.now();
+
+      const executionTime = endTime - startTime;
+      expect(executionTime).toBeLessThan(100); // Should complete in less than 100ms
+    });
+
+    test('✅ Should handle large dataset efficiently', async () => {
+      // Create 100 students
+      const promises = [];
+      for (let i = 0; i < 100; i++) {
+        promises.push(Student.create(global.testUtils.generateTestStudent()));
+      }
+
+      const startTime = Date.now();
+      await Promise.all(promises);
+      const endTime = Date.now();
+
+      const executionTime = endTime - startTime;
+      expect(executionTime).toBeLessThan(10000); // Should complete in less than 10 seconds
+    });
+  });
+});

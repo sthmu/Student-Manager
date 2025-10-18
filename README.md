@@ -176,10 +176,22 @@ npm run dev
 
 ### 4. Create Admin Account
 
+**IMPORTANT:** Registration requires an admin code for security.
+
 1. Open `http://localhost:5173`
-2. Click "Sign Up"
-3. Fill form with admin code from `.env`
-4. Login and start managing students!
+2. Click **"Sign Up"** (not "Sign In")
+3. Fill in the registration form:
+   - Username
+   - Email
+   - Password
+   - Confirm Password
+   - **Admin Code** (use `ADMIN_REGISTRATION_CODE` from Backend `.env` file)
+     - Example: If your `.env` has `ADMIN_REGISTRATION_CODE=ADMIN2024`, enter `ADMIN2024`
+4. After successful registration, you'll be redirected to login
+5. Login with your email and password
+6. Start managing students!
+
+**Note:** Without the correct admin code from the `.env` file, registration will fail. This prevents unauthorized account creation.
 
 ---
 

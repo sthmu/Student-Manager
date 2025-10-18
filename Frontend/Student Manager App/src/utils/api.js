@@ -1,7 +1,12 @@
 // API utility functions for authenticated requests
 import { clearAuth } from './auth';
 
-const API_BASE_URL = 'http://localhost:5000/api';
+// Automatically detect environment
+// Local dev: uses Vite proxy (/api)
+// Production (Azure SWA): uses /api (proxied by Azure to backend VM)
+const API_BASE_URL = import.meta.env.DEV 
+  ? '/api'  // Local development (Vite proxy)
+  : '/api'; // Production (Azure Static Web Apps proxy)
 
 // Get token from localStorage
 const getAuthToken = () => {

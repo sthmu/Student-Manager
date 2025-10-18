@@ -16,9 +16,50 @@ const { errorHandler, notFound } = require('./middleware/errorHandler');
 const app = express();
 
 // ===== MIDDLEWARE =====
-app.use(cors());                    // Enable CORS
+
+// Enhanced CORS configuration for both local dev and Azure deployment
+const corsOptions = {
+  origin: function (origin, callback) {
+    // Allow requests with no origin (like mobile apps, Postman, or curl)
+    if (!origin) return callback(null, true);
+    
+    const allowedOrigins = [
+      'http://localhost:5173',           // Vite dev server (default)
+      'http://localhost:5174',           // Vite dev server (alternate)
+      'http://127.0.0.1:5173',           // Local IP variant
+      'http://127.0.0.1:5174',           // Local IP variant
+      'http://20.81.132.208',            // Your Azure VM IP
+      /\.azurestaticapps\.net$/          // Any Azure Static Web Apps domain
+    ];
+    
+    // Check if origin matches allowed patterns
+    const isAllowed = allowedOrigins.some(allowed => {
+      if (allowed instanceof RegExp) {
+        return allowed.test(origin);
+      }
+      return allowed === origin;
+    });
+    
+    if (isAllowed) {
+      callback(null, true);
+    } else {
+      console.warn(`CORS: Blocked request from origin: ${origin}`);
+      callback(null, true); // Allow anyway for now (remove in production)
+    }
+  },
+  credentials: true,
+  methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
+  allowedHeaders: ['Content-Type', 'Authorization'],
+  exposedHeaders: ['Content-Range', 'X-Content-Range'],
+  maxAge: 86400 // 24 hours
+};
+
+app.use(cors(corsOptions));         // Enable CORS with custom config
 app.use(express.json());            // Parse JSON bodies
 app.use(express.urlencoded({ extended: true })); // Parse URL-encoded bodies
+
+// Handle preflight requests
+app.options('*', cors(corsOptions));
 
 // ===== ROUTES =====
 
